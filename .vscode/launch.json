@@ -1,0 +1,29 @@
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: 当前文件",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [ "--arch","resnet20_cifar", 
+ "/home/dataset/cifar",
+ "--resume","/home/young/liuyixin/8.31/distiller/examples/ssl/checkpoints/checkpoint_trained_dense.pth.tar" ,
+ "--amc-protocol","mac-constrained", 
+"--amc-target-density","0.5" ,
+ "--etes","0.075" ,
+"--amc-ft-epochs","0" ,
+ "--amc-prune-pattern","channels",
+ "--amc-prune-method","fm-reconstruction",
+ "--amc-agent-algo","DDPG",
+ "--amc-cfg","/home/young/liuyixin/8.31/distiller/examples/auto_compression/amc/auto_compression_channels.yaml" ,
+ "--amc-rllib","hanlab",
+ "-j","1"
+            ]
+        }
+    ]
+}
