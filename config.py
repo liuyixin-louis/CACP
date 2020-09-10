@@ -37,13 +37,12 @@ from collections import OrderedDict
 import yaml
 import json
 from torch.optim.lr_scheduler import *
-import distiller
-from distiller.thinning import *
-from distiller.pruning import *
+from pruning.thinning import *
+from pruning import *
 from distiller.regularization import *
-from distiller.learning_rate import *
-from distiller.quantization import *
-from distiller.utils import filter_kwargs
+from learning_rate import *
+from quantization import *
+from utils import filter_kwargs
 
 msglogger = logging.getLogger()
 app_cfg_logger = logging.getLogger("app_cfg")

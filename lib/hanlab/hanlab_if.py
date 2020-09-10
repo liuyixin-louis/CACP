@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-from examples.auto_compression.amc.rl_libs.hanlab.agent import DDPG, train
+from .agent import DDPG, train
 import logging
 
 
@@ -49,6 +49,7 @@ class RlLibInterface(object):
         agent_args.train_episode = (env.amc_cfg.ddpg_cfg.num_heatup_episodes +
                                     env.amc_cfg.ddpg_cfg.num_training_episodes)
         agent_args.output = "."
+        agent_args.conditional = args.conditional
         agent = DDPG(args.observation_len, 1, agent_args)
         train(agent_args.train_episode, agent, env, agent_args.output, agent_args.warmup)
 

@@ -1,5 +1,3 @@
-
-
 # python3 amc.py --arch=resnet20_cifar \
 # /home/dataset/cifar \
 # --resume=../../ssl/checkpoints/checkpoint_trained_dense.pth.tar \
@@ -14,8 +12,6 @@
 # --amc-cfg=auto_compression_channels.yaml \
 # --amc-rllib=hanlab \
 # -j=1
-
-
 
 import os
 import logging
@@ -66,6 +62,7 @@ def train_auto_compressor(model, args, optimizer_data, validate_fn, save_checkpo
     arch = args.arch
     num_ft_epochs = args.amc_ft_epochs
     action_range = args.amc_action_range
+    conditional = args.conditional
 
     config_verbose(False)
 
@@ -103,7 +100,8 @@ def train_auto_compressor(model, args, optimizer_data, validate_fn, save_checkpo
             'num_heatup_episodes': args.amc_heatup_episodes,
             'num_training_episodes': args.amc_training_episodes,
             'actor_lr': 1e-4,
-            'critic_lr': 1e-3})
+            'critic_lr': 1e-3,
+            "conditional":conditional})
 
     amc_cfg = utils.MutableNamedTuple({
             'modules_dict': compression_cfg["network"],  # dict of modules, indexed by arch name
@@ -119,12 +117,13 @@ def train_auto_compressor(model, args, optimizer_data, validate_fn, save_checkpo
             'group_size': args.amc_group_size,
             'n_points_per_fm': args.amc_fm_reconstruction_n_pts,
             'ddpg_cfg': ddpg_cfg,
-            'ranking_noise': args.amc_ranking_noise})
+            'ranking_noise': args.amc_ranking_noise,
+            "conditional":conditional,
+            "support_raito":args.support_ratio})
 
     #net_wrapper = NetworkWrapper(model, app_args, services)
     #return sample_networks(net_wrapper, services)
-
-    amc_cfg.target_density = args.amc_target_density
+    # amc_cfg.target_density = args.amc_target_density
     amc_cfg.reward_fn, amc_cfg.action_constrain_fn = reward_factory(args.amc_protocol)
 
     def create_environment():
@@ -141,7 +140,7 @@ def train_auto_compressor(model, args, optimizer_data, validate_fn, save_checkpo
     #     steps_per_episode = env1.steps_per_episode
     #     rl.solve(env1, env2)
     # args.amc_rllib == "hanlab":
-    from rl_libs.hanlab import hanlab_if
+    from lib.hanlab import hanlab_if
     rl = hanlab_if.RlLibInterface()
     args.observation_len = len(Observation._fields)
     rl.solve(env1, args)
@@ -160,7 +159,6 @@ def train_auto_compressor(model, args, optimizer_data, validate_fn, save_checkpo
     #     return rl.solve(env1)
     # else:
     #     raise ValueError("unsupported rl library: ", args.amc_rllib)
-
 
 def config_verbose(verbose, display_summaries=False):
     if verbose:

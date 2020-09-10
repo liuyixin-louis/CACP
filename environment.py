@@ -38,7 +38,7 @@ import data_loggers
 
 
 msglogger = logging.getLogger("examples.auto_compression.amc")
-Observation = namedtuple('Observation', ['t', 'type', 'n', 'c',  'h', 'w', 'stride', 'k', 'MACs',
+Observation = namedtuple('Observation', ["prun_ratio",'t', 'type', 'n', 'c',  'h', 'w', 'stride', 'k', 'MACs',
                                          'Weights', 'reduced', 'rest', 'prev_a'])
 ObservationLen = len(Observation._fields)
 
@@ -96,10 +96,21 @@ class DistillerWrapperEnvironment(gym.Env):
             raise ValueError("The config file does not specify the modules to compress for %s" % app_args.arch)
         self.net_wrapper = NetworkWrapper(model, app_args, services, modules_list, amc_cfg.pruning_pattern)
         self.original_model_macs, self.original_model_size = self.net_wrapper.get_resources_requirements()
+
+        # our works
+        self.support_targets = amc_cfg.support_raito
+        self.curr_target_index = 0
+        self.amc_cfg.target_density = self.support_targets[0]
+        self.best_reward = dict(zip(self.support_targets,[float("-inf")]*len(self.support_targets)))
+
+
         self.reset(init_only=True)
         self._max_episode_steps = self.net_wrapper.model_metadata.num_pruned_layers()  # Hack for Coach-TD3
         self.episode = 0
-        self.best_reward = float("-inf")
+        # self.best_reward = float("-inf")
+
+
+
         self.action_low, self.action_high = amc_cfg.action_range
         #self.action_high = amc_cfg.action_range[1]
         self._log_model_info()
@@ -111,6 +122,9 @@ class DistillerWrapperEnvironment(gym.Env):
 
         if self.amc_cfg.pruning_method == "fm-reconstruction":
             self._collect_fm_reconstruction_samples(modules_list)
+        
+        
+
 
     def _collect_fm_reconstruction_samples(self, modules_list):
         """Run the forward-pass on the selected dataset and collect feature-map samples.
@@ -200,6 +214,13 @@ class DistillerWrapperEnvironment(gym.Env):
             return
         msglogger.info("Render Environment: current_state_id=%d" % self.current_state_id)
         utils.log_weights_sparsity(self.model, -1, loggers=[self.pylogger])
+
+    def change(self):
+        self.curr_target_index = (self.curr_target_index+1) % len(self.support_targets)
+        self.amc_cfg.target_density = self.support_targets[self.curr_target_index]
+
+
+
 
     def step(self, pruning_action):
         """Take a step, given an action.
@@ -338,7 +359,7 @@ class DistillerWrapperEnvironment(gym.Env):
             layer_macs = self.net_wrapper.layer_macs(layer)
             mod = utils.model_find_module(self.model, layer.name)
             if isinstance(mod, torch.nn.Conv2d):
-                obs = [state_id,
+                obs = [self.amc_cfg.target_density,state_id,
                        0,
                        mod.out_channels,
                        mod.in_channels,
@@ -350,7 +371,7 @@ class DistillerWrapperEnvironment(gym.Env):
                        layer_macs,
                        0, 0, 0]
             elif isinstance(mod, torch.nn.Linear):
-                obs = [state_id,
+                obs = [self.amc_cfg.target_density,state_id,
                        1,
                        mod.out_features,
                        mod.in_features,
@@ -430,8 +451,8 @@ class DistillerWrapperEnvironment(gym.Env):
         normalized_macs = total_macs / self.original_model_macs * 100
         normalized_nnz = total_nnz / self.original_model_size * 100
 
-        if reward > self.best_reward:
-            self.best_reward = reward
+        if reward > self.best_reward[self.amc_cfg.target_density]:
+            self.best_reward[self.amc_cfg.target_density] = reward
             ckpt_name = self.save_checkpoint(is_best=True)
             msglogger.info("Best reward={}  episode={}  top1={}".format(reward, self.episode, top1))
         else:
@@ -462,9 +483,9 @@ class DistillerWrapperEnvironment(gym.Env):
         """Save the learned-model checkpoint"""
         episode = str(self.episode).zfill(3)
         if is_best:
-            fname = "BEST_adc_episode_{}".format(episode)
+            fname = "BEST_adc_episode_{}_{}".format(episode,self.amc_cfg.target_density)
         else:
-            fname = "adc_episode_{}".format(episode)
+            fname = "adc_episode_{}_{}".format(episode,self.amc_cfg.target_density )
         if is_best or self.amc_cfg.save_chkpts:
             # Always save the best episodes, and depending on amc_cfg.save_chkpts save all other episodes
             scheduler = self.net_wrapper.create_scheduler()

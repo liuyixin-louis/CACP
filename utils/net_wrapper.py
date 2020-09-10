@@ -40,7 +40,7 @@ class NetworkWrapper(object):
 
     def reset(self, model):
         self.model = model
-        self.zeros_mask_dict = pruning.scheduler.create_model_masks_dict(self.model)
+        self.zeros_mask_dict = pruning.create_model_masks_dict(self.model)
         self.model_metadata = copy.deepcopy(self.cached_model_metadata)
 
     def get_resources_requirements(self):
@@ -90,7 +90,7 @@ class NetworkWrapper(object):
         return ret
 
     def create_scheduler(self):
-        scheduler = pruning.scheduler.CompressionScheduler(self.model, self.zeros_mask_dict)
+        scheduler = pruning.CompressionScheduler(self.model, self.zeros_mask_dict)
         return scheduler
 
     def remove_structures(self, layer_id, fraction_to_prune, prune_what, prune_how,
@@ -132,12 +132,12 @@ class NetworkWrapper(object):
 
         if prune_how in ["l1-rank", "stochastic-l1-rank"]:
             # Create a channel/filter-ranking pruner
-            pruner = pruning.ranked_structures_pruner.L1RankedStructureParameterPruner(
+            pruner = pruning.L1RankedStructureParameterPruner(
                 "auto_pruner", group_type, fraction_to_prune, conv_pname,
                 noise=ranking_noise, group_size=group_size)
             meta = None
         elif prune_how == "fm-reconstruction":
-            pruner = pruning.ranked_structures_pruner.FMReconstructionChannelPruner(
+            pruner = pruning.FMReconstructionChannelPruner(
                 "auto_pruner", group_type, fraction_to_prune, conv_pname,
                 group_size, math.ceil, ranking_noise=ranking_noise)
             meta = {'model': self.model}

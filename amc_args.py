@@ -6,6 +6,14 @@ def add_automl_args(argparser):
         argparser (argparse.ArgumentParser): Existing parser to which to add the arguments
     """
     group = argparser.add_argument_group('AutoML Compression Arguments')
+
+
+    # our work
+    group.add_argument('--conditional', default=False,action='store_true',
+                    help='conditional single agent different ratio')
+    
+    group.add_argument('--support-ratio', nargs='+', type=float,help='if use only one pruning ratio,just write one ratio. ')
+                    
     group.add_argument('--amc-cfg', dest='amc_cfg_file', type=str, action='store',
                     help='AMC configuration file')
     group.add_argument('--amc-protocol', choices=["mac-constrained",
@@ -26,8 +34,8 @@ def add_automl_args(argparser):
                        help='The number of episodes for training/exploitation')
     group.add_argument('--amc-reward-frequency', type=int, default=None,
                        help='Reward computation frequency (measured in agent steps)')
-    group.add_argument('--amc-target-density', type=float,
-                       help='Target density of the network we are seeking')
+    # group.add_argument('--amc-target-density', type=float,default=0.3,
+    #                    help='Target density of the network we are seeking')
     group.add_argument('--amc-agent-algo', choices=["ClippedPPO-continuous",
                                                     "ClippedPPO-discrete",
                                                     "TD3",

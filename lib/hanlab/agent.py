@@ -102,6 +102,10 @@ class DDPG(object):
         self.moving_average = None
         self.moving_alpha = 0.5  # based on batch, so small
 
+
+        self.conditional = args.conditional
+
+
     def update_policy(self):
         # Sample batch
         state_batch, action_batch, reward_batch, \
@@ -262,11 +266,11 @@ def train(num_episode, agent, env, output, warmup):
         observation = deepcopy(observation2)
 
         if done:  # end of episode
-            print('#{}: episode_reward:{:.4f} acc: {:.4f}, ratio: {:.4f}'.format(episode, episode_reward,
+            print('#{}: target_ratio:{} episode_reward:{:.4f} acc: {:.4f}, ratio: {:.4f}'.format(episode,env.amc_cfg.target_density, episode_reward,
                                                                                  info['accuracy'],
                                                                                  info['compress_ratio']))
             text_writer.write(
-                '#{}: episode_reward:{:.4f} acc: {:.4f}, ratio: {:.4f}\n'.format(episode, episode_reward,
+                '#{}: target_ratio:{} episode_reward:{:.4f} acc: {:.4f}, ratio: {:.4f}'.format(episode,env.amc_cfg.target_density, episode_reward,
                                                                                  info['accuracy'],
                                                                                  info['compress_ratio']))
             final_reward = T[-1][0]
@@ -284,6 +288,9 @@ def train(num_episode, agent, env, output, warmup):
             episode += 1
             T = []
 
+            if agent.conditional:
+                env.change()
+
             # tfwriter.add_scalar('reward/last', final_reward, episode)
             # tfwriter.add_scalar('reward/best', env.best_reward, episode)
             # tfwriter.add_scalar('info/accuracy', info['accuracy'], episode)
@@ -293,7 +300,7 @@ def train(num_episode, agent, env, output, warmup):
             # for i, preserve_rate in enumerate(env.strategy):
             #     tfwriter.add_scalar('preserve_rate/{}'.format(i), preserve_rate, episode)
 
-            text_writer.write('best reward: {}\n'.format(env.best_reward))
+            text_writer.write('best reward for target ratio {}: {}\n'.format(env.amc_cfg.target_density,env.best_reward[env.amc_cfg.target_density]))
             #text_writer.write('best policy: {}\n'.format(env.best_strategy))
     text_writer.close()
  
