@@ -1,3 +1,41 @@
+// {
+//     // 使用 IntelliSense 了解相关属性。 
+//     // 悬停以查看现有属性的描述。
+//     // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+//     "version": "0.2.0",
+//     "configurations": [
+//         {
+//             "name": "Python: 当前文件",
+//             "type": "python",
+//             "request": "launch",
+//             "program": "${file}",
+//             "console": "integratedTerminal",
+//             "args": [ "--arch","resnet56_cifar", 
+//  "/home/dataset/cifar",
+//  "--amc-protocol","mac-constrained", 
+//  "--etes","0.075" ,
+// "--amc-ft-epochs","0" ,
+//  "--amc-prune-pattern","channels",
+//  "--amc-prune-method","fm-reconstruction",
+//  "--amc-agent-algo","DDPG",
+//  "--amc-cfg","/home/young/liuyixin/CAMC_disllter/auto_compression_channels.yaml" ,
+//  "--amc-rllib","hanlab",
+//  "-j","4",
+//  "--conditional","--support-ratio","0.7",
+//  "--amc-heatup-episodes","100",
+//  "--amc-training-episodes","800",
+//  "--out-dir","/home/young/liuyixin/CAMC_disllter/logs",
+//  "--name","resnet56-cifar-amc0.7-100-800",
+//  "--deterministic","--conditional",
+//  "--pretrained",
+//  "--state_dict","/home/young/liuyixin/CAMC_disllter/checkpoints/pytorch_resnet_cifar10/cifar10-resnet56-f5939a66.pth"
+// //  "--resume","/home/young/liuyixin/CAMC_disllter/checkpoints/pytorch_resnet_cifar10/cifar10-resnet56-f5939a66.pth"
+//             ]
+//         }
+//     ]
+// }
+
+// multi-run ft
 {
     // 使用 IntelliSense 了解相关属性。 
     // 悬停以查看现有属性的描述。
@@ -10,20 +48,17 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": [ "--arch","resnet20_cifar", 
- "/home/dataset/cifar",
- "--resume","/home/young/liuyixin/8.31/distiller/examples/ssl/checkpoints/checkpoint_trained_dense.pth.tar" ,
- "--amc-protocol","mac-constrained", 
-// "--amc-target-density","0.3" ,
- "--etes","0.075" ,
-"--amc-ft-epochs","0" ,
- "--amc-prune-pattern","channels",
- "--amc-prune-method","fm-reconstruction",
- "--amc-agent-algo","DDPG",
- "--amc-cfg","/home/young/liuyixin/8.31/distiller/examples/auto_compression/amc/auto_compression_channels.yaml" ,
- "--amc-rllib","hanlab",
- "-j","1",
- "--conditional","--support-ratio","0.3","0.5","0.7"
+            "args": ["/home/dataset/cifar",
+                "--scan-dir","/home/young/liuyixin/CAMC_disllter/logs/resnet56-cifar-amc0.7-100-800___2020.09.14-174644",
+                "--output-csv","ft_1epoch_results.csv",
+                "--arch","resnet56_cifar",
+                "--lr","0.1",
+                "--epochs","60",
+                "--compress","/home/young/liuyixin/CAMC_disllter/ft.yaml",
+                "--processes","16",
+                "--top-performing-chkpts",
+                "--vs","0"
+                
             ]
         }
     ]

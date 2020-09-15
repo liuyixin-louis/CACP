@@ -213,7 +213,7 @@ def init_classifier_compression_arg_parser(include_ptq_lapq_args=False):
     SUMMARY_CHOICES = ['sparsity', 'compute', 'model', 'modules', 'png', 'png_w_params']
 
     parser = argparse.ArgumentParser(description='Distiller image classification model compression')
-    parser.add_argument('data', metavar='DATASET_DIR', help='path to dataset')
+    parser.add_argument('data', metavar='DATASET_DIR', help='path to dataset',default="/home/dataset/cifar")
     parser.add_argument('--arch', '-a', metavar='ARCH', default='resnet18', type=lambda s: s.lower(),
                         choices=models.ALL_MODEL_NAMES,
                         help='model architecture: ' +
@@ -315,6 +315,9 @@ def init_classifier_compression_arg_parser(include_ptq_lapq_args=False):
                         help='Load a model without DataParallel wrapping it')
     parser.add_argument('--thinnify', dest='thinnify', action='store_true', default=False,
                         help='physically remove zero-filters and create a smaller model')
+    parser.add_argument('--state_dict', dest='state_dict',
+                        default='', type=str,
+                        help='state dict for model')
     quantization.add_post_train_quant_args(parser, add_lapq_args=include_ptq_lapq_args)
     return parser
 
@@ -386,6 +389,15 @@ def _init_learner(args):
     # Create the model
     model = create_model(args.pretrained, args.dataset, args.arch,
                          parallel=not args.load_serialized, device_ids=args.gpus)
+    
+    
+    # net = None
+    # if isinstance(model,torch.nn.DataParallel):
+    #     net = model.module
+    #     print('is instance of')
+    # else:
+    #     net = model
+
     compression_scheduler = None
 
     # TODO(barrh): args.deprecated_resume is deprecated since v0.3.1
@@ -398,11 +410,19 @@ def _init_learner(args):
 
     optimizer = None
     start_epoch = 0
+    
     if args.resumed_checkpoint_path:
         model, compression_scheduler, optimizer, start_epoch = apputils.load_checkpoint(
             model, args.resumed_checkpoint_path, model_device=args.device)
     elif args.load_model_path:
         model = apputils.load_lean_checkpoint(model, args.load_model_path, model_device=args.device)
+    elif args.state_dict:
+        sd = torch.load(args.state_dict)
+        if 'state_dict' in sd:  # a checkpoint but not a state_dict
+            sd = sd['state_dict']
+        sd = {'module.'+k: v for k, v in sd.items()}
+        model.load_state_dict(sd)
+
     if args.reset_optimizer:
         start_epoch = 0
         if optimizer is not None:
@@ -423,7 +443,8 @@ def _init_learner(args):
         # Model is re-transferred to GPU in case parameters were added (e.g. PACTQuantizer)
         model.to(args.device)
     elif compression_scheduler is None:
-        compression_scheduler = apputils.CompressionScheduler(model)
+        import pruning
+        compression_scheduler = pruning.CompressionScheduler(model)
 
     return model, compression_scheduler, optimizer, start_epoch, args.epochs
 

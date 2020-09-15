@@ -1,0 +1,87 @@
+2020-09-15 21:48:53,372 - Log file for this run: /home/young/liuyixin/CAMC_disllter/experiments/resnet56_cifar/amc0.3/ft/BEST_adc_episode_732_0.3_checkpoint.pth.tar___2020.09.15-214853/BEST_adc_episode_732_0.3_checkpoint.pth.tar___2020.09.15-214853.log
+2020-09-15 21:48:53,372 - Number of CPUs: 24
+2020-09-15 21:48:53,405 - Number of GPUs: 4
+2020-09-15 21:48:53,405 - CUDA version: 10.1.243
+2020-09-15 21:48:53,406 - CUDNN version: 7603
+2020-09-15 21:48:53,406 - Kernel: 4.4.0-134-generic
+2020-09-15 21:48:53,406 - Python: 3.7.3 (default, Mar 27 2019, 22:11:17) 
+[GCC 7.3.0]
+2020-09-15 21:48:53,407 - pip freeze: {'absl-py': '0.10.0', 'argon2-cffi': '20.1.0', 'astor': '0.8.1', 'astroid': '2.0.4', 'atomicwrites': '1.4.0', 'attrs': '20.1.0', 'backcall': '0.2.0', 'bleach': '3.1.5', 'bqplot': '0.11.5', 'certifi': '2020.6.20', 'cffi': '1.14.2', 'chardet': '3.0.4', 'cycler': '0.10.0', 'decorator': '4.4.2', 'defusedxml': '0.6.0', 'distiller': '0.4.0rc0', 'entrypoints': '0.3', 'gast': '0.2.2', 'gitdb': '4.0.5', 'gitpython': '3.1.0', 'google-pasta': '0.2.0', 'graphviz': '0.10.1', 'grpcio': '1.31.0', 'gym': '0.12.5', 'h5py': '2.10.0', 'idna': '2.10', 'importlib-metadata': '1.7.0', 'ipykernel': '5.3.4', 'ipython': '7.18.1', 'ipython-genutils': '0.2.0', 'ipywidgets': '7.4.2', 'isort': '4.3.4', 'jedi': '0.17.2', 'jinja2': '2.11.2', 'joblib': '0.16.0', 'jsonpatch': '1.26', 'jsonpointer': '2.0', 'jsonschema': '3.2.0', 'jupyter': '1.0.0', 'jupyter-client': '6.1.7', 'jupyter-console': '6.2.0', 'jupyter-core': '4.6.3', 'keras-applications': '1.0.8', 'keras-preprocessing': '1.1.2', 'kiwisolver': '1.2.0', 'lazy-object-proxy': '1.3.1', 'markdown': '3.2.2', 'markupsafe': '1.1.1', 'matplotlib': '3.3.1', 'mccabe': '0.6.1', 'mistune': '0.8.4', 'more-itertools': '8.5.0', 'munch': '2.5.0', 'nbconvert': '5.6.1', 'nbformat': '5.0.7', 'notebook': '6.1.3', 'numpy': '1.19.1', 'opt-einsum': '3.3.0', 'packaging': '20.4', 'pandas': '1.1.1', 'pandocfilters': '1.4.2', 'parso': '0.7.1', 'pexpect': '4.8.0', 'pickleshare': '0.7.5', 'pillow': '6.2.2', 'pip': '20.1.1', 'pluggy': '0.13.1', 'pretrainedmodels': '0.7.4', 'prometheus-client': '0.8.0', 'prompt-toolkit': '3.0.7', 'protobuf': '3.13.0', 'ptyprocess': '0.6.0', 'py': '1.9.0', 'pycparser': '2.20', 'pydot': '1.4.1', 'pyglet': '1.5.7', 'pygments': '2.6.1', 'pylint': '2.1.1', 'pyparsing': '2.4.7', 'pyrsistent': '0.16.0', 'pytest': '4.6.11', 'python-dateutil': '2.8.1', 'pytz': '2020.1', 'pyyaml': '5.3.1', 'pyzmq': '19.0.2', 'qgrid': '1.1.1', 'qtconsole': '4.7.6', 'qtpy': '1.9.0', 'requests': '2.24.0', 'scikit-learn': '0.21.2', 'scipy': '1.5.2', 'send2trash': '1.5.0', 'setuptools': '47.3.0.post20200616', 'six': '1.15.0', 'smmap': '3.0.4', 'tabulate': '0.8.3', 'tensorboard': '1.15.0', 'tensorboardx': '2.1', 'tensorflow': '1.15.3', 'tensorflow-estimator': '1.15.1', 'termcolor': '1.1.0', 'terminado': '0.8.3', 'testpath': '0.4.4', 'torch': '1.3.1', 'torchfile': '0.1.0', 'torchnet': '0.0.4', 'torchvision': '0.4.2', 'tornado': '6.0.4', 'tqdm': '4.33.0', 'traitlets': '4.3.3', 'traittypes': '0.2.1', 'urllib3': '1.25.10', 'visdom': '0.1.8.9', 'wcwidth': '0.2.5', 'webencodings': '0.5.1', 'websocket-client': '0.57.0', 'werkzeug': '1.0.1', 'wheel': '0.34.2', 'widgetsnbextension': '3.4.2', 'wrapt': '1.12.1', 'xlsxwriter': '1.3.3', 'zipp': '3.1.0'}
+2020-09-15 21:48:53,407 - Cannot find a Git repository.  You probably downloaded an archive of Distiller.
+2020-09-15 21:48:53,407 - Command line: ft_.py /home/dataset/cifar --scan-dir=/home/young/liuyixin/CAMC_disllter/experiments/resnet56_cifar --output-csv=ft_60epoch_results.csv --arch=resnet56_cifar --lr=0.1 --vs=0 -p=50 --epochs=60 --compress=/home/young/liuyixin/CAMC_disllter/ft.yaml -j=1 --deterministic --processes=16
+2020-09-15 21:48:53,410 - Random seed: 0
+2020-09-15 21:48:53,496 - => created a resnet56_cifar model with the cifar10 dataset
+2020-09-15 21:48:56,111 - The "--resume" flag is deprecated. Please use "--resume-from=YOUR_PATH" instead.
+2020-09-15 21:48:56,111 - If you wish to also reset the optimizer, call with: --reset-optimizer
+2020-09-15 21:48:56,111 - => loading checkpoint /home/young/liuyixin/CAMC_disllter/experiments/resnet56_cifar/amc0.3/BEST_adc_episode_732_0.3_checkpoint.pth.tar
+2020-09-15 21:48:56,135 - => Checkpoint contents:
++-------------------+-------------+----------------+
+| Key               | Type        | Value          |
+|-------------------+-------------+----------------|
+| arch              | str         | resnet56_cifar |
+| compression_sched | dict        |                |
+| dataset           | str         | cifar10        |
+| epoch             | int         | 0              |
+| extras            | dict        |                |
+| is_parallel       | bool        | True           |
+| state_dict        | OrderedDict |                |
+| thinning_recipes  | list        |                |
++-------------------+-------------+----------------+
+
+2020-09-15 21:48:56,136 - => Checkpoint['extras'] contents:
++----------------+--------+---------+
+| Key            | Type   | Value   |
+|----------------+--------+---------|
+| creation_masks | dict   |         |
++----------------+--------+---------+
+
+2020-09-15 21:48:56,138 - Loaded compression schedule from checkpoint (epoch 0)
+2020-09-15 21:48:56,138 - Loaded a thinning recipe from the checkpoint
+2020-09-15 21:48:56,255 - Optimizer could not be loaded from checkpoint.
+2020-09-15 21:48:56,255 - => loaded checkpoint '/home/young/liuyixin/CAMC_disllter/experiments/resnet56_cifar/amc0.3/BEST_adc_episode_732_0.3_checkpoint.pth.tar' (epoch 0)
+2020-09-15 21:48:56,256 - Reading compression schedule from: /home/young/liuyixin/CAMC_disllter/ft.yaml
+2020-09-15 21:48:56,259 - Schedule contents:
+{
+  "lr_schedulers": {
+    "training_lr": {
+      "class": "StepLR",
+      "step_size": 20
+    }
+  },
+  "policies": [
+    {
+      "lr_scheduler": {
+        "instance_name": "training_lr"
+      },
+      "starting_epoch": 0,
+      "ending_epoch": 60,
+      "frequency": 1
+    }
+  ]
+}
+2020-09-15 21:48:56,262 - Training epoch: 50000 samples (256 per mini-batch)
+2020-09-15 21:49:07,667 - Epoch: [0][   50/  196]    Overall Loss 0.996334    Objective Loss 0.996334    Top1 66.304688    Top5 96.656250    LR 0.100000    Time 0.228016    
+2020-09-15 21:49:14,078 - Epoch: [0][  100/  196]    Overall Loss 0.834132    Objective Loss 0.834132    Top1 71.859375    Top5 97.585938    LR 0.100000    Time 0.178085    
+2020-09-15 21:49:20,455 - Epoch: [0][  150/  196]    Overall Loss 0.743628    Objective Loss 0.743628    Top1 74.867188    Top5 98.046875    LR 0.100000    Time 0.161214    
+2020-09-15 21:49:26,421 - Training epoch: 50000 samples (256 per mini-batch)
+2020-09-15 21:49:37,547 - Epoch: [1][   50/  196]    Overall Loss 0.481711    Objective Loss 0.481711    Top1 83.718750    Top5 99.226562    LR 0.100000    Time 0.222411    
+2020-09-15 21:49:44,319 - Epoch: [1][  100/  196]    Overall Loss 0.461015    Objective Loss 0.461015    Top1 84.183594    Top5 99.316406    LR 0.100000    Time 0.178895    
+2020-09-15 21:49:51,347 - Epoch: [1][  150/  196]    Overall Loss 0.449117    Objective Loss 0.449117    Top1 84.669271    Top5 99.372396    LR 0.100000    Time 0.166099    
+2020-09-15 21:49:58,028 - Training epoch: 50000 samples (256 per mini-batch)
+2020-09-15 21:50:09,563 - Epoch: [2][   50/  196]    Overall Loss 0.402647    Objective Loss 0.402647    Top1 86.375000    Top5 99.359375    LR 0.100000    Time 0.230601    
+2020-09-15 21:50:16,793 - Epoch: [2][  100/  196]    Overall Loss 0.400836    Objective Loss 0.400836    Top1 86.285156    Top5 99.378906    LR 0.100000    Time 0.187570    
+2020-09-15 21:50:24,056 - Epoch: [2][  150/  196]    Overall Loss 0.397978    Objective Loss 0.397978    Top1 86.351562    Top5 99.424479    LR 0.100000    Time 0.173453    
+2020-09-15 21:50:30,845 - Training epoch: 50000 samples (256 per mini-batch)
+2020-09-15 21:50:42,809 - Epoch: [3][   50/  196]    Overall Loss 0.367874    Objective Loss 0.367874    Top1 87.375000    Top5 99.468750    LR 0.100000    Time 0.239200    
+2020-09-15 21:50:50,079 - Epoch: [3][  100/  196]    Overall Loss 0.366324    Objective Loss 0.366324    Top1 87.523438    Top5 99.464844    LR 0.100000    Time 0.192268    
+2020-09-15 21:50:57,332 - Epoch: [3][  150/  196]    Overall Loss 0.359035    Objective Loss 0.359035    Top1 87.638021    Top5 99.476562    LR 0.100000    Time 0.176512    
+2020-09-15 21:51:04,069 - Training epoch: 50000 samples (256 per mini-batch)
+2020-09-15 21:51:15,716 - Epoch: [4][   50/  196]    Overall Loss 0.320313    Objective Loss 0.320313    Top1 89.078125    Top5 99.671875    LR 0.100000    Time 0.232842    
+2020-09-15 21:51:22,956 - Epoch: [4][  100/  196]    Overall Loss 0.323713    Objective Loss 0.323713    Top1 89.011719    Top5 99.679688    LR 0.100000    Time 0.188793    
+2020-09-15 21:51:30,249 - Epoch: [4][  150/  196]    Overall Loss 0.329356    Objective Loss 0.329356    Top1 88.841146    Top5 99.653646    LR 0.100000    Time 0.174468    
+2020-09-15 21:51:37,011 - Training epoch: 50000 samples (256 per mini-batch)
+2020-09-15 21:51:48,493 - Epoch: [5][   50/  196]    Overall Loss 0.299915    Objective Loss 0.299915    Top1 89.617188    Top5 99.632812    LR 0.100000    Time 0.229515    
+2020-09-15 21:51:55,773 - Epoch: [5][  100/  196]    Overall Loss 0.303108    Objective Loss 0.303108    Top1 89.457031    Top5 99.675781    LR 0.100000    Time 0.187526    
+2020-09-15 21:52:03,057 - Epoch: [5][  150/  196]    Overall Loss 0.299150    Objective Loss 0.299150    Top1 89.617188    Top5 99.682292    LR 0.100000    Time 0.173556    
+2020-09-15 21:52:09,827 - Training epoch: 50000 samples (256 per mini-batch)
+2020-09-15 21:52:21,392 - Epoch: [6][   50/  196]    Overall Loss 0.281453    Objective Loss 0.281453    Top1 90.335938    Top5 99.718750    LR 0.100000    Time 0.231204    

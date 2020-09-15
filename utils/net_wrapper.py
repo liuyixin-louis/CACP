@@ -262,6 +262,9 @@ class NetworkMetadata(object):
     
 
 def get_network_details(model, dataset, dependency_type, layers_to_prune=None):
+    import time
+    t1 = time.time()
+
     def make_conv(model, conv_module, g, name, seq_id, layer_id):
         conv = SimpleNamespace()
         conv.type = "Conv2D"
@@ -347,6 +350,8 @@ def get_network_details(model, dataset, dependency_type, layers_to_prune=None):
                 new_layer.dependencies = list()
                 find_dependencies(dependency_type, g, all_layers, name, new_layer.dependencies)
                 dependent_layers.add(tuple(new_layer.dependencies))
+    t2 = time.time()
+    print("get_network_details:",t2-t1)
 
     def convert_layer_names_to_indices(layer_names):
         """Args:

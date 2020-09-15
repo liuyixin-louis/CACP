@@ -44,7 +44,7 @@ from multiprocessing import Process, Queue
 import multiprocessing
 import csv
 import os
-from apputils import save_checkpoint
+from apputils.checkpoint import save_checkpoint
 # from data_loggers import PythonLogger
 import data_loggers
 
@@ -219,7 +219,7 @@ def create_scheduler(model, zeros_mask_dict):
 
 def create_network_record_file():
     """Create the CSV file and write the column names"""
-    fields = ['iteration', 'top1', 'param_name', 'normalized_macs', 'total_macs', 'densities']
+    fields = ['iteration', 'top1', 'param_name', 'normalized_macs', 'total_macs', 'densities',"pruning_ratio"]
     with open(os.path.join(msglogger.logdir, 'greedy.csv'), 'w') as f:
         writer = csv.writer(f)
         writer.writerow(fields)

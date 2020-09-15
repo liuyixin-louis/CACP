@@ -42,6 +42,27 @@ SUPPORTED_DATASETS = ('imagenet', 'cifar10', 'mnist')
 RESNET_SYMS = ('ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152',
                'resnext50_32x4d', 'resnext101_32x8d', 'wide_resnet50_2', 'wide_resnet101_2')
 
+
+pretrained_settings = {
+    "cifar10": {
+        'resnet20': 'https://github.com/chenyaofo/CIFAR-pretrained-models/releases/download/resnet/cifar10-resnet20-30abc31d.pth',
+        'resnet32': 'https://github.com/chenyaofo/CIFAR-pretrained-models/releases/download/resnet/cifar10-resnet32-e96f90cf.pth',
+        'resnet44': 'https://github.com/chenyaofo/CIFAR-pretrained-models/releases/download/resnet/cifar10-resnet44-f2c66da5.pth',
+        'resnet56': 'https://github.com/chenyaofo/CIFAR-pretrained-models/releases/download/resnet/cifar10-resnet56-f5939a66.pth',
+        'num_classes': 10
+    },
+    "cifar100": {
+        'resnet20': 'https://github.com/chenyaofo/CIFAR-pretrained-models/releases/download/resnet/cifar100-resnet20-8412cc70.pth',
+        'resnet32': 'https://github.com/chenyaofo/CIFAR-pretrained-models/releases/download/resnet/cifar100-resnet32-6568a0a0.pth',
+        'resnet44': 'https://github.com/chenyaofo/CIFAR-pretrained-models/releases/download/resnet/cifar100-resnet44-20aaa8cf.pth',
+        'resnet56': 'https://github.com/chenyaofo/CIFAR-pretrained-models/releases/download/resnet/cifar100-resnet56-2f147f26.pth',
+        'num_classes': 100
+    }
+
+}
+
+
+
 TORCHVISION_MODEL_NAMES = sorted(
                             name for name in torch_models.__dict__
                             if name.islower() and not name.startswith("__")
@@ -206,12 +227,19 @@ def _create_imagenet_model(arch, pretrained):
 
 
 def _create_cifar10_model(arch, pretrained):
-    if pretrained:
-        raise ValueError("Model {} (CIFAR10) does not have a pretrained model".format(arch))
+    # if pretrained:
+    #     raise ValueError("Model {} (CIFAR10) does not have a pretrained model".format(arch))
     try:
         model = cifar10_models.__dict__[arch]()
     except KeyError:
         raise ValueError("Model {} is not supported for dataset CIFAR10".format(arch))
+
+    if pretrained:
+        if arch == "resnet56_cifar":
+            import torch.utils.model_zoo as model_zoo
+            model.load_state_dict(model_zoo.load_url(pretrained_settings['cifar10']['resnet56']))
+        else:
+            raise ValueError("Model {} (CIFAR10) does not have a pretrained model".format(arch))
     return model
 
 

@@ -39,10 +39,13 @@ import json
 from torch.optim.lr_scheduler import *
 from pruning.thinning import *
 from pruning import *
-from distiller.regularization import *
+from regularization import *
 from learning_rate import *
 from quantization import *
 from utils import filter_kwargs
+from pruning.scheduler import CompressionScheduler
+from pruning.policy import PruningPolicy,RegularizationPolicy,QuantizationPolicy,LRPolicy
+from utils.utils import yaml_ordered_load
 
 msglogger = logging.getLogger()
 app_cfg_logger = logging.getLogger("app_cfg")
@@ -52,7 +55,7 @@ def dict_config(model, optimizer, sched_dict, scheduler=None, resumed_epoch=None
     app_cfg_logger.debug('Schedule contents:\n' + json.dumps(sched_dict, indent=2))
 
     if scheduler is None:
-        scheduler = distiller.CompressionScheduler(model)
+        scheduler = CompressionScheduler(model)
 
     pruners = __factory('pruners', model, sched_dict)
     regularizers = __factory('regularizers', model, sched_dict)
@@ -74,22 +77,22 @@ def dict_config(model, optimizer, sched_dict, scheduler=None, resumed_epoch=None
                     raise
                 assert instance_name in pruners, "Pruner {} was not defined in the list of pruners".format(instance_name)
                 pruner = pruners[instance_name]
-                policy = distiller.PruningPolicy(pruner, args)
+                policy = PruningPolicy(pruner, args)
 
             elif 'regularizer' in policy_def:
                 instance_name, args = __policy_params(policy_def, 'regularizer')
                 assert instance_name in regularizers, "Regularizer {} was not defined in the list of regularizers".format(instance_name)
                 regularizer = regularizers[instance_name]
                 if args is None:
-                    policy = distiller.RegularizationPolicy(regularizer)
+                    policy = RegularizationPolicy(regularizer)
                 else:
-                    policy = distiller.RegularizationPolicy(regularizer, **args)
+                    policy = RegularizationPolicy(regularizer, **args)
 
             elif 'quantizer' in policy_def:
                 instance_name, args = __policy_params(policy_def, 'quantizer')
                 assert instance_name in quantizers, "Quantizer {} was not defined in the list of quantizers".format(instance_name)
                 quantizer = quantizers[instance_name]
-                policy = distiller.QuantizationPolicy(quantizer)
+                policy = QuantizationPolicy(quantizer)
 
             elif 'lr_scheduler' in policy_def:
                 # LR schedulers take an optimizer in their constructor, so postpone handling until we're certain
@@ -116,7 +119,7 @@ def dict_config(model, optimizer, sched_dict, scheduler=None, resumed_epoch=None
             assert instance_name in lr_schedulers, "LR-scheduler {} was not defined in the list of lr-schedulers".format(
                 instance_name)
             lr_scheduler = lr_schedulers[instance_name]
-            policy = distiller.LRPolicy(lr_scheduler)
+            policy = LRPolicy(lr_scheduler)
             add_policy_to_scheduler(policy, policy_def, scheduler)
 
     except AssertionError:
@@ -143,7 +146,7 @@ def file_config(model, optimizer, filename, scheduler=None, resumed_epoch=None):
     with open(filename, 'r') as stream:
         msglogger.info('Reading compression schedule from: %s', filename)
         try:
-            sched_dict = distiller.utils.yaml_ordered_load(stream)
+            sched_dict = yaml_ordered_load(stream)
             return dict_config(model, optimizer, sched_dict, scheduler, resumed_epoch)
         except yaml.YAMLError as exc:
             print("\nFATAL parsing error while parsing the schedule configuration file %s" % filename)
@@ -154,7 +157,7 @@ def config_component_from_file_by_class(model, filename, class_name, **extra_arg
     with open(filename, 'r') as stream:
         msglogger.info('Reading configuration from: %s', filename)
         try:
-            config_dict = distiller.utils.yaml_ordered_load(stream)
+            config_dict = yaml_ordered_load(stream)
             config_dict.pop('policies', None)
             for section_name, components in config_dict.items():
                 for component_name, user_args in components.items():

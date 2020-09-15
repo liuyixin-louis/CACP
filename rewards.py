@@ -27,6 +27,7 @@ def reward_factory(reward_name):
     This pair is defines the --amc-protocol choice.
     """
     return {
+        "mac-constrained-conditional-reward":(amc_mac_constrained_conditional_reward_fn, mac_constrained_clamp_action),
         "mac-constrained": (amc_mac_constrained_reward_fn, mac_constrained_clamp_action),
         "accuracy-guaranteed": (amc_accuracy_guarantee_reward_fn, None),
         "mac-constrained-experimental": (mac_constrained_experimental_reward_fn, None),
@@ -38,6 +39,15 @@ def reward_factory(reward_name):
 def amc_mac_constrained_reward_fn(env, top1, top5, vloss, total_macs):
     return top1/100
 
+def amc_mac_constrained_conditional_reward_fn(env, top1, top5, vloss, total_macs):
+    factor = 100
+    if env.amc_cfg.target_density == "0.3":
+        factor = 11
+    elif env.amc_cfg.target_density == "0.5":
+        factor = 70
+    elif env.amc_cfg.target_density == "0.":
+        factor = 50
+    return top1/factor
 
 def amc_accuracy_guarantee_reward_fn(env, top1, top5, vloss, total_macs):
     return -(1-top1/100) * math.log(total_macs)

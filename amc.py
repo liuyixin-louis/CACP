@@ -121,9 +121,6 @@ def train_auto_compressor(model, args, optimizer_data, validate_fn, save_checkpo
             "conditional":conditional,
             "support_raito":args.support_ratio})
 
-    #net_wrapper = NetworkWrapper(model, app_args, services)
-    #return sample_networks(net_wrapper, services)
-    # amc_cfg.target_density = args.amc_target_density
     amc_cfg.reward_fn, amc_cfg.action_constrain_fn = reward_factory(args.amc_protocol)
 
     def create_environment():
@@ -133,32 +130,10 @@ def train_auto_compressor(model, args, optimizer_data, validate_fn, save_checkpo
 
     env1 = create_environment()
 
-    # if args.amc_rllib == "spinningup":
-    #     from rl_libs.spinningup import spinningup_if
-    #     rl = spinningup_if.RlLibInterface()
-    #     env2 = create_environment()
-    #     steps_per_episode = env1.steps_per_episode
-    #     rl.solve(env1, env2)
-    # args.amc_rllib == "hanlab":
     from lib.hanlab import hanlab_if
     rl = hanlab_if.RlLibInterface()
     args.observation_len = len(Observation._fields)
     rl.solve(env1, args)
-    # elif args.amc_rllib == "coach":
-    #     from rl_libs.coach import coach_if
-    #     rl = coach_if.RlLibInterface()
-    #     env_cfg = {'model': env1.model,
-    #                'app_args': env1.app_args,
-    #                'amc_cfg': env1.amc_cfg,
-    #                'services': env1.services}
-    #     steps_per_episode = env1.steps_per_episode
-    #     rl.solve(**env_cfg, steps_per_episode=steps_per_episode)
-    # elif args.amc_rllib == "random":
-    #     from rl_libs.random import random_if
-    #     rl = random_if.RlLibInterface()
-    #     return rl.solve(env1)
-    # else:
-    #     raise ValueError("unsupported rl library: ", args.amc_rllib)
 
 def config_verbose(verbose, display_summaries=False):
     if verbose:

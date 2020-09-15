@@ -286,7 +286,7 @@ class DistillerWrapperEnvironment(gym.Env):
         msglogger.debug("\tself._removed_macs={}".format(self.removed_macs))
         assert math.isclose(layer_macs_after_action / layer_macs, 1 - pruning_action)
 
-        stats = ('Performance/Validation/',
+        stats = ('Performance/Validation/{}/'.format(self.amc_cfg.target_density),
                  OrderedDict([('requested_action', pruning_action)]))
 
         utils.log_training_progress(stats, None,
@@ -464,11 +464,14 @@ class DistillerWrapperEnvironment(gym.Env):
                   ckpt_name, json.dumps(action_history), json.dumps(agent_action_history),
                   json.dumps(performance)]
         self.stats_logger.add_record(fields)
+        msglogger.info("====Target Now :%.2f====",
+                       self.amc_cfg.target_density)
         msglogger.info("Top1: %.2f - compute: %.2f%% - params:%.2f%% - actions: %s",
                        top1, normalized_macs, normalized_nnz, self.action_history)
         if log_stats:
-            stats = ('Performance/EpisodeEnd/',
-                     OrderedDict([('Loss', vloss),
+            stats = ('Performance/EpisodeEnd/TargetRatio{}/'.format(self.amc_cfg.target_density),
+                     OrderedDict([
+                                    ('Loss', vloss),
                                   ('Top1', top1),
                                   ('Top5', top5),
                                   ('reward', reward),

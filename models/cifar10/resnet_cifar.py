@@ -164,4 +164,5 @@ def resnet44_cifar(**kwargs):
 
 def resnet56_cifar(**kwargs):
     model = ResNetCifar(BasicBlock, [9, 9, 9], **kwargs)
+    # if 
     return model
