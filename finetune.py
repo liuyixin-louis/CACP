@@ -124,9 +124,9 @@ def ft(ft_dir, app_args, cleanup_ft_dir=False):
         results_dict[result[0]] = result[1]
 
     # Read the results of the AMC experiment (we'll want to use some of the data)
-    import pandas as pd
-    df = pd.read_csv(os.path.join(ft_dir, "amc.csv"))
-    assert len(results_dict) > 0
+    # import pandas as pd
+    # df = pd.read_csv(os.path.join(ft_dir, "amc.csv"))
+    # assert len(results_dict) > 0
 
     if cleanup_ft_dir:
         # cleanup: remove the "ft" directory
