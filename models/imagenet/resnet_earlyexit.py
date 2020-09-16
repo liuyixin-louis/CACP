@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torchvision.models as models
 from .resnet import DistillerBottleneck
-import distiller
+from utils.early_exit import EarlyExitMgr
 
 
 __all__ = ['resnet50_earlyexit']
@@ -30,7 +30,7 @@ def get_exits_def(num_classes):
 class ResNetEarlyExit(models.ResNet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.ee_mgr = distiller.EarlyExitMgr()
+        self.ee_mgr = EarlyExitMgr()
         self.ee_mgr.attach_exits(self, get_exits_def(num_classes=1000))
 
     def forward(self, x):

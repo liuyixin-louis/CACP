@@ -36,8 +36,7 @@ changes for the 10-class Cifar-10 dataset.
 from .resnet_cifar import BasicBlock
 from .resnet_cifar import ResNetCifar
 import torch.nn as nn
-import distiller
-
+from  utils.early_exit import EarlyExitMgr
 
 __all__ = ['resnet20_cifar_earlyexit', 'resnet32_cifar_earlyexit', 'resnet44_cifar_earlyexit',
            'resnet56_cifar_earlyexit', 'resnet110_cifar_earlyexit', 'resnet1202_cifar_earlyexit']
@@ -61,7 +60,7 @@ def get_exits_def():
 class ResNetCifarEarlyExit(ResNetCifar):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.ee_mgr = distiller.EarlyExitMgr()
+        self.ee_mgr = EarlyExitMgr()
         self.ee_mgr.attach_exits(self, get_exits_def())
 
     def forward(self, x):

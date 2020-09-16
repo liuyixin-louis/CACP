@@ -49,7 +49,7 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "args": ["/home/dataset/cifar",
-                "--scan-dir","/home/young/liuyixin/CAMC_disllter/ft_ckpt/amc0.3",
+                "--scan-dir","ft/ft_ckpt/amc0.3",
                 "--arch","resnet56_cifar",
                 "--lr","0.1",
                 "--epochs","1",

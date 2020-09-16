@@ -27,7 +27,7 @@ from collections import OrderedDict
 import torch.nn as nn
 from torchvision.models.resnet import ResNet, BasicBlock, Bottleneck, _resnet
 
-from distiller.modules import EltwiseAdd
+from modules import EltwiseAdd
 
 
 __all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
