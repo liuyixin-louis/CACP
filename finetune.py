@@ -82,7 +82,8 @@ def ft(ft_dir, app_args, cleanup_ft_dir=False):
     assert checkpoints
     
     # We create a subdirectory, where we will write all of our output
-    ft_output_dir = os.path.join(ft_dir, "ft")
+    ft_output_dir = os.path.join(app_args.ft_result_log_save_path, ft_dir[ft_dir.rfind("/")+1:])
+    
     os.makedirs(ft_output_dir, exist_ok=True)
     print("Writing results to directory %s" % ft_output_dir)
     app_args.output_dir = ft_output_dir
@@ -189,6 +190,7 @@ if __name__ == '__main__':
     def add_camc_args(argparser):
         group = argparser.add_argument_group('camc')
         group.add_argument('--support-ratio', nargs='+', type=float,help='if use only one pruning ratio,just write one ratio. ')
+        group.add_argument('--ft-result-log-save-path', metavar='DIR', required=True, help='path to save result')
         # group.add_argument('--processes', type=int, default=4,
         #                    help="Number of parallel experiment processes to run in parallel")
         # group.add_argument('--scan-dir', metavar='DIR',default="/home/young/liuyixin/CAMC_disllter/logs/resnet56-cifar-amc0.7-100-800___2020.09.14-174644", required=True, help='path to checkpoints')

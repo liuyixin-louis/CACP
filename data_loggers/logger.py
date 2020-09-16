@@ -25,7 +25,7 @@ Note that not all loggers implement all logging methods.
 """
 
 import torch
-import tabulate
+# import tabulate
 from utils import density, sparsity, sparsity_2D, size_to_str, to_np, norm_filters
 import utils
 # TensorBoard logger
@@ -86,12 +86,12 @@ class PythonLogger(DataLogger):
                 log = log + '{name} {val:.6f}    '.format(name=name, val=val)
         self.pylogger.info(log)
 
-    def log_activation_statistic(self, phase, stat_name, activation_stats, epoch):
-        data = []
-        for layer, statistic in activation_stats.items():
-            data.append([layer, statistic])
-        t = tabulate.tabulate(data, headers=['Layer', stat_name], tablefmt='psql', floatfmt=".2f")
-        self.pylogger.info('\n' + t)
+    # def log_activation_statistic(self, phase, stat_name, activation_stats, epoch):
+    #     data = []
+    #     for layer, statistic in activation_stats.items():
+    #         data.append([layer, statistic])
+    #     t = tabulate.tabulate(data, headers=['Layer', stat_name], tablefmt='psql', floatfmt=".2f")
+    #     self.pylogger.info('\n' + t)
 
     def log_weights_sparsity(self, model, epoch):
         t, total = utils.weights_sparsity_tbl_summary(model, return_total_sparsity=True)
@@ -118,11 +118,11 @@ class PythonLogger(DataLogger):
                 data.append([utils.normalize_module_name(n) + '.' + buffer_name, *values])
                 maxlens[buffer_name] = max(maxlens[buffer_name], len(values))
 
-        for name in buffer_names:
-            if datas[name]:
-                headers = ['Layer'] + ['Val_' + str(i) for i in range(maxlens[name])]
-                t = tabulate.tabulate(datas[name], headers=headers, tablefmt='psql', floatfmt='.4f')
-                self.pylogger.info('\n' + name.upper() + ': (Epoch {0}, Step {1})\n'.format(epoch, completed) + t)
+        # for name in buffer_names:
+        #     if datas[name]:
+        #         headers = ['Layer'] + ['Val_' + str(i) for i in range(maxlens[name])]
+        #         t = tabulate.tabulate(datas[name], headers=headers, tablefmt='psql', floatfmt='.4f')
+        #         self.pylogger.info('\n' + name.upper() + ': (Epoch {0}, Step {1})\n'.format(epoch, completed) + t)
 
 
 class TensorBoardLogger(DataLogger):

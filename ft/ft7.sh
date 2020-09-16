@@ -3,4 +3,4 @@ python finetune.py \
 --scan-dir=ft/ft_ckpt/camc0.3_r   \
 --arch=resnet56_cifar --lr=0.1 --vs=0 -p=50 --epochs=400 \
 --compress=ft.yaml \
---deterministic
+--deterministic --ft-result-log-save-path=ft/result

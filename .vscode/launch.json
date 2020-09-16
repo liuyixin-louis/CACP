@@ -54,7 +54,8 @@
                 "--lr","0.1",
                 "--epochs","1",
                 "--compress","/home/young/liuyixin/CAMC_disllter/ft.yaml",
-                "--vs","0"
+                "--vs","0",
+                "--ft-result-log-save-path","ft/result"
                 
             ]
         }

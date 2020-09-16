@@ -25,7 +25,7 @@ import shutil
 from errno import ENOENT
 import logging
 from numbers import Number
-from tabulate import tabulate
+# from tabulate import tabulate
 import torch
 # from utils.utils import normalize_module_name
 import pruning
@@ -117,17 +117,17 @@ def load_lean_checkpoint(model, chkpt_file, model_device=None):
                            lean_checkpoint=True)[0]
 
 
-def get_contents_table(d):
-    def inspect_val(val):
-        if isinstance(val, (Number, str)):
-            return val
-        elif isinstance(val, type):
-            return val.__name__
-        return None
+# def get_contents_table(d):
+#     def inspect_val(val):
+#         if isinstance(val, (Number, str)):
+#             return val
+#         elif isinstance(val, type):
+#             return val.__name__
+#         return None
 
-    contents = [[k, type(d[k]).__name__, inspect_val(d[k])] for k in d.keys()]
-    contents = sorted(contents, key=lambda entry: entry[0])
-    return tabulate(contents, headers=["Key", "Type", "Value"], tablefmt="psql")
+#     contents = [[k, type(d[k]).__name__, inspect_val(d[k])] for k in d.keys()]
+#     contents = sorted(contents, key=lambda entry: entry[0])
+#     return tabulate(contents, headers=["Key", "Type", "Value"], tablefmt="psql")
 
 
 def load_checkpoint(model, chkpt_file, optimizer=None,
@@ -214,12 +214,12 @@ def load_checkpoint(model, chkpt_file, optimizer=None,
 
     msglogger.info("=> loading checkpoint %s", chkpt_file)
     checkpoint = torch.load(chkpt_file, map_location=lambda storage, loc: storage)
-    msglogger.info('=> Checkpoint contents:\n%s\n' % get_contents_table(checkpoint))
-    if 'extras' in checkpoint:
-        msglogger.info("=> Checkpoint['extras'] contents:\n{}\n".format(get_contents_table(checkpoint['extras'])))
+    # msglogger.info('=> Checkpoint contents:\n%s\n' % get_contents_table(checkpoint))
+    # if 'extras' in checkpoint:
+    #     msglogger.info("=> Checkpoint['extras'] contents:\n{}\n".format(get_contents_table(checkpoint['extras'])))
 
-    if 'state_dict' not in checkpoint:
-        raise ValueError("Checkpoint must contain the model parameters under the key 'state_dict'")
+    # if 'state_dict' not in checkpoint:
+    #     raise ValueError("Checkpoint must contain the model parameters under the key 'state_dict'")
 
     if not model:
         model = _create_model_from_ckpt()

@@ -24,7 +24,7 @@ import os
 # import pydot
 from functools import partial
 import pandas as pd
-from tabulate import tabulate
+# from tabulate import tabulate
 import logging
 import torch
 import torch.optim
@@ -44,51 +44,51 @@ msglogger = logging.getLogger()
 
 
 
-__all__ = ['model_summary',
-           'weights_sparsity_summary', 'weights_sparsity_tbl_summary',
-           'model_performance_summary', 'model_performance_tbl_summary', 'masks_sparsity_tbl_summary',
-           'attributes_summary', 'attributes_summary_tbl', 'connectivity_summary',
-           'connectivity_summary_verbose', 'connectivity_tbl_summary',
-           'draw_model_to_file', 'draw_img_classifier_to_file', 'export_img_classifier_to_onnx']
+__all__ = [
+           'weights_sparsity_summary',
+           'model_performance_summary', 
+           'attributes_summary', 'connectivity_summary',
+           'connectivity_summary_verbose', 
+             'export_img_classifier_to_onnx']
 
 
 
 
-def model_summary(model, what, dataset=None, logdir=''):
-    if what.startswith('png'):
-        png_fname = os.path.join(logdir, 'model.png')
-        draw_img_classifier_to_file(model, png_fname, dataset, what == 'png_w_params')
-    elif what == 'sparsity':
-        pylogger = PythonLogger(msglogger)
-        csvlogger = CsvLogger(logdir=logdir)
-        log_weights_sparsity(model, -1, loggers=[pylogger, csvlogger])
-    elif what == 'compute':
-        try:
-            dummy_input = get_dummy_input(dataset, model_device(model))
-        except ValueError as e:
-            print(e)
-            return
-        df = model_performance_summary(model, dummy_input, 1)
-        t = tabulate(df, headers='keys', tablefmt='psql', floatfmt=".5f")
-        total_macs = df['MACs'].sum()
-        print(t)
-        print("Total MACs: " + "{:,}".format(total_macs))
-    elif what == 'model':
-        # print the simple form of the model
-        print(model)
-    elif what == 'modules':
-        # Print the names of non-leaf modules
-        # Remember that in PyTorch not every node is a module (e.g. F.relu).
-        # Also remember that parameterless modules, like nn.MaxPool2d, can be used multiple
-        # times in the same model, but they will only appear once in the modules list.
-        nodes = []
-        for name, module in model.named_modules():
-            # Only print leaf modules
-            if len(module._modules) == 0:
-                nodes.append([name, module.__class__.__name__])
-        print(tabulate(nodes, headers=['Name', 'Type']))
-    else:
-        raise ValueError("%s is not a supported summary type" % what)
+# def model_summary(model, what, dataset=None, logdir=''):
+#     if what.startswith('png'):
+#         png_fname = os.path.join(logdir, 'model.png')
+#         draw_img_classifier_to_file(model, png_fname, dataset, what == 'png_w_params')
+#     elif what == 'sparsity':
+#         pylogger = PythonLogger(msglogger)
+#         csvlogger = CsvLogger(logdir=logdir)
+#         log_weights_sparsity(model, -1, loggers=[pylogger, csvlogger])
+#     elif what == 'compute':
+#         try:
+#             dummy_input = get_dummy_input(dataset, model_device(model))
+#         except ValueError as e:
+#             print(e)
+#             return
+#         df = model_performance_summary(model, dummy_input, 1)
+#         # t = tabulate(df, headers='keys', tablefmt='psql', floatfmt=".5f")
+#         total_macs = df['MACs'].sum()
+#         # print(t)
+#         print("Total MACs: " + "{:,}".format(total_macs))
+#     elif what == 'model':
+#         # print the simple form of the model
+#         print(model)
+#     elif what == 'modules':
+#         # Print the names of non-leaf modules
+#         # Remember that in PyTorch not every node is a module (e.g. F.relu).
+#         # Also remember that parameterless modules, like nn.MaxPool2d, can be used multiple
+#         # times in the same model, but they will only appear once in the modules list.
+#         nodes = []
+#         for name, module in model.named_modules():
+#             # Only print leaf modules
+#             if len(module._modules) == 0:
+#                 nodes.append([name, module.__class__.__name__])
+#         # print(tabulate(nodes, headers=['Name', 'Type']))
+#     else:
+#         raise ValueError("%s is not a supported summary type" % what)
 
 
 def weights_sparsity_summary(model, return_total_sparsity=False, param_dims=[2, 4]):
@@ -136,12 +136,12 @@ def weights_sparsity_summary(model, return_total_sparsity=False, param_dims=[2, 
     return df
 
 
-def weights_sparsity_tbl_summary(model, return_total_sparsity=False, param_dims=[2, 4]):
-    df, total_sparsity = weights_sparsity_summary(model, return_total_sparsity=True, param_dims=param_dims)
-    t = tabulate(df, headers='keys', tablefmt='psql', floatfmt=".5f")
-    if return_total_sparsity:
-        return t, total_sparsity
-    return t
+# def weights_sparsity_tbl_summary(model, return_total_sparsity=False, param_dims=[2, 4]):
+#     df, total_sparsity = weights_sparsity_summary(model, return_total_sparsity=True, param_dims=param_dims)
+#     t = tabulate(df, headers='keys', tablefmt='psql', floatfmt=".5f")
+#     if return_total_sparsity:
+#         return t, total_sparsity
+#     return t
 
 
 def masks_sparsity_summary(model, scheduler, param_dims=[2, 4]):
@@ -167,9 +167,9 @@ def masks_sparsity_summary(model, scheduler, param_dims=[2, 4]):
     return df
 
 
-def masks_sparsity_tbl_summary(model, scheduler, param_dims=[2, 4]):
-    df = masks_sparsity_summary(model, scheduler, param_dims=param_dims)
-    return tabulate(df, headers='keys', tablefmt='psql', floatfmt=".5f")
+# def masks_sparsity_tbl_summary(model, scheduler, param_dims=[2, 4]):
+#     df = masks_sparsity_summary(model, scheduler, param_dims=param_dims)
+#     return tabulate(df, headers='keys', tablefmt='psql', floatfmt=".5f")
 
 
 # Performance data collection  code follows from here down
@@ -239,10 +239,10 @@ def model_performance_summary(model, dummy_input, batch_size=1):
     return df
 
 
-def model_performance_tbl_summary(model, dummy_input, batch_size):
-    df = model_performance_summary(model, dummy_input, batch_size)
-    t = tabulate(df, headers='keys', tablefmt='psql', floatfmt=".5f")
-    return t
+# def model_performance_tbl_summary(model, dummy_input, batch_size):
+#     df = model_performance_summary(model, dummy_input, batch_size)
+#     t = tabulate(df, headers='keys', tablefmt='psql', floatfmt=".5f")
+#     return t
 
 
 def attributes_summary(sgraph, ignore_attrs):
@@ -275,9 +275,9 @@ def attributes_summary(sgraph, ignore_attrs):
     return df
 
 
-def attributes_summary_tbl(sgraph, ignore_attrs):
-    df = attributes_summary(sgraph, ignore_attrs)
-    return tabulate(df, headers='keys', tablefmt='psql')
+# def attributes_summary_tbl(sgraph, ignore_attrs):
+#     df = attributes_summary(sgraph, ignore_attrs)
+#     return tabulate(df, headers='keys', tablefmt='psql')
 
 
 def connectivity_summary(sgraph):
@@ -323,12 +323,12 @@ def connectivity_summary_verbose(sgraph):
     return df
 
 
-def connectivity_tbl_summary(sgraph, verbose=False):
-    if verbose:
-        df = connectivity_summary_verbose(sgraph)
-    else:
-        df = connectivity_summary(sgraph)
-    return tabulate(df, headers='keys', tablefmt='psql')
+# def connectivity_tbl_summary(sgraph, verbose=False):
+#     if verbose:
+#         df = connectivity_summary_verbose(sgraph)
+#     else:
+#         df = connectivity_summary(sgraph)
+#     return tabulate(df, headers='keys', tablefmt='psql')
 
 
 # def create_pydot_graph(op_nodes_desc, data_nodes, param_nodes, edges, rankdir='TB', styles=None):
@@ -409,63 +409,63 @@ def connectivity_tbl_summary(sgraph, verbose=False):
 #     return png
 
 
-def draw_model_to_file(sgraph, png_fname, display_param_nodes=False, rankdir='TB', styles=None):
-    """Create a PNG file, containing a graphiz-dot graph of the netowrk represented
-    by SummaryGraph 'sgraph'
+# def draw_model_to_file(sgraph, png_fname, display_param_nodes=False, rankdir='TB', styles=None):
+#     """Create a PNG file, containing a graphiz-dot graph of the netowrk represented
+#     by SummaryGraph 'sgraph'
 
-    Args:
-        sgraph (SummaryGraph): the SummaryGraph instance to draw.
-        png_fname (string): PNG file name
-        display_param_nodes (boolean): if True, draw the parameter nodes
-        rankdir: diagram direction.  'TB'/'BT' is Top-to-Bottom/Bottom-to-Top
-                 'LR'/'R/L' is Left-to-Rt/Rt-to-Left
-        styles: a dictionary of styles.  Key is module name.  Value is
-                a legal pydot style dictionary.  For example:
-                styles['conv1'] = {'shape': 'oval',
-                                   'fillcolor': 'gray',
-                                   'style': 'rounded, filled'}
-        """
-    png = create_png(sgraph, display_param_nodes=display_param_nodes)
-    with open(png_fname, 'wb') as fid:
-        fid.write(png)
+#     Args:
+#         sgraph (SummaryGraph): the SummaryGraph instance to draw.
+#         png_fname (string): PNG file name
+#         display_param_nodes (boolean): if True, draw the parameter nodes
+#         rankdir: diagram direction.  'TB'/'BT' is Top-to-Bottom/Bottom-to-Top
+#                  'LR'/'R/L' is Left-to-Rt/Rt-to-Left
+#         styles: a dictionary of styles.  Key is module name.  Value is
+#                 a legal pydot style dictionary.  For example:
+#                 styles['conv1'] = {'shape': 'oval',
+#                                    'fillcolor': 'gray',
+#                                    'style': 'rounded, filled'}
+#         """
+#     png = create_png(sgraph, display_param_nodes=display_param_nodes)
+#     with open(png_fname, 'wb') as fid:
+#         fid.write(png)
 
 
-def draw_img_classifier_to_file(model, png_fname, dataset=None, display_param_nodes=False,
-                                rankdir='TB', styles=None, input_shape=None):
-    """Draw a PyTorch image classifier to a PNG file.  This a helper function that
-    simplifies the interface of draw_model_to_file().
+# def draw_img_classifier_to_file(model, png_fname, dataset=None, display_param_nodes=False,
+#                                 rankdir='TB', styles=None, input_shape=None):
+#     """Draw a PyTorch image classifier to a PNG file.  This a helper function that
+#     simplifies the interface of draw_model_to_file().
 
-    Args:
-        model: PyTorch model instance
-        png_fname (string): PNG file name
-        dataset (string): one of 'imagenet' or 'cifar10'.  This is required in order to
-                          create a dummy input of the correct shape.
-        display_param_nodes (boolean): if True, draw the parameter nodes
-        rankdir: diagram direction.  'TB'/'BT' is Top-to-Bottom/Bottom-to-Top
-                 'LR'/'R/L' is Left-to-Rt/Rt-to-Left
-        styles: a dictionary of styles.  Key is module name.  Value is
-                a legal pydot style dictionary.  For example:
-                styles['conv1'] = {'shape': 'oval',
-                                   'fillcolor': 'gray',
-                                   'style': 'rounded, filled'}
-        input_shape (tuple): List of integers representing the input shape.
-                             Used only if 'dataset' is None
-    """
-    dummy_input = get_dummy_input(dataset=dataset,
-                                            device=model_device(model),
-                                            input_shape=input_shape)
-    try:
-        non_para_model = make_non_parallel_copy(model)
-        g = SummaryGraph(non_para_model, dummy_input)
+#     Args:
+#         model: PyTorch model instance
+#         png_fname (string): PNG file name
+#         dataset (string): one of 'imagenet' or 'cifar10'.  This is required in order to
+#                           create a dummy input of the correct shape.
+#         display_param_nodes (boolean): if True, draw the parameter nodes
+#         rankdir: diagram direction.  'TB'/'BT' is Top-to-Bottom/Bottom-to-Top
+#                  'LR'/'R/L' is Left-to-Rt/Rt-to-Left
+#         styles: a dictionary of styles.  Key is module name.  Value is
+#                 a legal pydot style dictionary.  For example:
+#                 styles['conv1'] = {'shape': 'oval',
+#                                    'fillcolor': 'gray',
+#                                    'style': 'rounded, filled'}
+#         input_shape (tuple): List of integers representing the input shape.
+#                              Used only if 'dataset' is None
+#     """
+#     dummy_input = get_dummy_input(dataset=dataset,
+#                                             device=model_device(model),
+#                                             input_shape=input_shape)
+#     try:
+#         non_para_model = make_non_parallel_copy(model)
+#         g = SummaryGraph(non_para_model, dummy_input)
 
-        draw_model_to_file(g, png_fname, display_param_nodes, rankdir, styles)
-        print("Network PNG image generation completed")
-    except FileNotFoundError:
-        print("An error has occured while generating the network PNG image.")
-        print("Please check that you have graphviz installed.")
-        print("\t$ sudo apt-get install graphviz")
-    finally:
-        del non_para_model
+#         draw_model_to_file(g, png_fname, display_param_nodes, rankdir, styles)
+#         print("Network PNG image generation completed")
+#     except FileNotFoundError:
+#         print("An error has occured while generating the network PNG image.")
+#         print("Please check that you have graphviz installed.")
+#         print("\t$ sudo apt-get install graphviz")
+#     finally:
+#         del non_para_model
 
 
 def export_img_classifier_to_onnx(model, onnx_fname, dataset, add_softmax=True, **kwargs):
