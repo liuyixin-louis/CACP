@@ -39,8 +39,7 @@ import utils.norms
 
 msglogger = logging.getLogger()
 
-
-class ConfusionMeter(meter.Meter):
+class ConfusionMeter():
     """Maintains a confusion matrix for a given calssification problem.
 
     The ConfusionMeter constructs a confusion matrix for a multi-class
@@ -127,7 +126,7 @@ class ConfusionMeter(meter.Meter):
 
 
 
-class ClassErrorMeter(meter.Meter):
+class ClassErrorMeter():
     def __init__(self, topk=[1], accuracy=False):
         super(ClassErrorMeter, self).__init__()
         self.topk = np.sort(topk)
@@ -178,7 +177,7 @@ class ClassErrorMeter(meter.Meter):
 
 
 
-class AverageValueMeter(meter.Meter):
+class AverageValueMeter():
     def __init__(self):
         super(AverageValueMeter, self).__init__()
         self.reset()

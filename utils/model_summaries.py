@@ -34,12 +34,24 @@ from utils import *
 
 msglogger = logging.getLogger()
 
+# __all__ = ['model_summary',
+#            'weights_sparsity_summary', 'weights_sparsity_tbl_summary',
+#            'model_performance_summary', 'model_performance_tbl_summary', 'masks_sparsity_tbl_summary',
+#            'attributes_summary', 'attributes_summary_tbl', 'connectivity_summary',
+#            'connectivity_summary_verbose', 'connectivity_tbl_summary', 'create_png', 'create_pydot_graph',
+#            'draw_model_to_file', 'draw_img_classifier_to_file', 'export_img_classifier_to_onnx']
+
+
+
+
 __all__ = ['model_summary',
            'weights_sparsity_summary', 'weights_sparsity_tbl_summary',
            'model_performance_summary', 'model_performance_tbl_summary', 'masks_sparsity_tbl_summary',
            'attributes_summary', 'attributes_summary_tbl', 'connectivity_summary',
-           'connectivity_summary_verbose', 'connectivity_tbl_summary', 'create_png', 'create_pydot_graph',
+           'connectivity_summary_verbose', 'connectivity_tbl_summary',
            'draw_model_to_file', 'draw_img_classifier_to_file', 'export_img_classifier_to_onnx']
+
+
 
 
 def model_summary(model, what, dataset=None, logdir=''):
