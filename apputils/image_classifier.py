@@ -27,7 +27,7 @@ import torch.nn.parallel
 import torch.backends.cudnn as cudnn
 import torch.optim
 import torch.utils.data
-import torchnet.meter as tnt
+
 import parser
 from functools import partial
 import argparse
@@ -40,6 +40,7 @@ from utils import float_range_argparse_checker as float_range
 import utils
 from config import file_config
 import quantization
+from utils import AverageValueMeter,ConfusionMeter,ClassErrorMeter
 
 
 # Logger handle
@@ -566,19 +567,19 @@ def train(train_loader, model, criterion, optimizer, epoch,
     OVERALL_LOSS_KEY = 'Overall Loss'
     OBJECTIVE_LOSS_KEY = 'Objective Loss'
 
-    losses = OrderedDict([(OVERALL_LOSS_KEY, tnt.AverageValueMeter()),
-                          (OBJECTIVE_LOSS_KEY, tnt.AverageValueMeter())])
-
-    classerr = tnt.ClassErrorMeter(accuracy=True, topk=(1, 5))
-    batch_time = tnt.AverageValueMeter()
-    data_time = tnt.AverageValueMeter()
+    losses = OrderedDict([(OVERALL_LOSS_KEY, AverageValueMeter()),
+                          (OBJECTIVE_LOSS_KEY, AverageValueMeter())])
+    
+    classerr = ClassErrorMeter(accuracy=True, topk=(1, 5))
+    batch_time = AverageValueMeter()
+    data_time = AverageValueMeter()
 
     # For Early Exit, we define statistics for each exit, so
     # `exiterrors` is analogous to `classerr` in the non-Early Exit case
     if early_exit_mode(args):
         args.exiterrors = []
         for exitnum in range(args.num_exits):
-            args.exiterrors.append(tnt.ClassErrorMeter(accuracy=True, topk=(1, 5)))
+            args.exiterrors.append(ClassErrorMeter(accuracy=True, topk=(1, 5)))
 
     total_samples = len(train_loader.sampler)
     batch_size = train_loader.batch_size
@@ -635,7 +636,7 @@ def train(train_loader, model, criterion, optimizer, epoch,
 
             for lc in agg_loss.loss_components:
                 if lc.name not in losses:
-                    losses[lc.name] = tnt.AverageValueMeter()
+                    losses[lc.name] = AverageValueMeter()
                 losses[lc.name].add(lc.value.item())
         else:
             losses[OVERALL_LOSS_KEY].add(loss.item())
@@ -716,23 +717,23 @@ def _validate(data_loader, model, criterion, loggers, args, epoch=-1):
                                         total_steps, args.print_freq, loggers)
 
     """Execute the validation/test loop."""
-    losses = {'objective_loss': tnt.AverageValueMeter()}
-    classerr = tnt.ClassErrorMeter(accuracy=True, topk=(1, 5))
+    losses = {'objective_loss': AverageValueMeter()}
+    classerr = ClassErrorMeter(accuracy=True, topk=(1, 5))
 
     if _is_earlyexit(args):
         # for Early Exit, we have a list of errors and losses for each of the exits.
         args.exiterrors = []
         args.losses_exits = []
         for exitnum in range(args.num_exits):
-            args.exiterrors.append(tnt.ClassErrorMeter(accuracy=True, topk=(1, 5)))
-            args.losses_exits.append(tnt.AverageValueMeter())
+            args.exiterrors.append(ClassErrorMeter(accuracy=True, topk=(1, 5)))
+            args.losses_exits.append(AverageValueMeter())
         args.exit_taken = [0] * args.num_exits
 
-    batch_time = tnt.AverageValueMeter()
+    batch_time = AverageValueMeter()
     total_samples = len(data_loader.sampler)
     batch_size = data_loader.batch_size
     if args.display_confusion:
-        confusion = tnt.ConfusionMeter(args.num_classes)
+        confusion = ConfusionMeter(args.num_classes)
     total_steps = total_samples / batch_size
     msglogger.info('%d samples (%d per mini-batch)', total_samples, batch_size)
 

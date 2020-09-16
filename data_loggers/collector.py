@@ -25,7 +25,7 @@ from sys import float_info
 from collections import OrderedDict
 from contextlib import contextmanager
 import torch
-from torchnet.meter import AverageValueMeter
+from utils import AverageValueMeter
 import logging
 from math import sqrt
 import matplotlib

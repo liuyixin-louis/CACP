@@ -21,7 +21,7 @@
     - model details
 """
 import os
-import pydot
+# import pydot
 from functools import partial
 import pandas as pd
 from tabulate import tabulate
@@ -319,82 +319,82 @@ def connectivity_tbl_summary(sgraph, verbose=False):
     return tabulate(df, headers='keys', tablefmt='psql')
 
 
-def create_pydot_graph(op_nodes_desc, data_nodes, param_nodes, edges, rankdir='TB', styles=None):
-    """Low-level API to create a PyDot graph (dot formatted).
-    """
-    pydot_graph = pydot.Dot('Net', graph_type='digraph', rankdir=rankdir)
+# def create_pydot_graph(op_nodes_desc, data_nodes, param_nodes, edges, rankdir='TB', styles=None):
+#     """Low-level API to create a PyDot graph (dot formatted).
+#     """
+#     pydot_graph = pydot.Dot('Net', graph_type='digraph', rankdir=rankdir)
 
-    op_node_style = {'shape': 'record',
-                     'fillcolor': '#6495ED',
-                     'style': 'rounded, filled'}
+#     op_node_style = {'shape': 'record',
+#                      'fillcolor': '#6495ED',
+#                      'style': 'rounded, filled'}
 
-    for op_node in op_nodes_desc:
-        style = op_node_style
-        # Check if we should override the style of this node.
-        if styles is not None and op_node[0] in styles:
-            style = styles[op_node[0]]
-        pydot_graph.add_node(pydot.Node(op_node[0], **style, label="\n".join(op_node)))
+#     for op_node in op_nodes_desc:
+#         style = op_node_style
+#         # Check if we should override the style of this node.
+#         if styles is not None and op_node[0] in styles:
+#             style = styles[op_node[0]]
+#         pydot_graph.add_node(pydot.Node(op_node[0], **style, label="\n".join(op_node)))
 
-    for data_node in data_nodes:
-        pydot_graph.add_node(pydot.Node(data_node[0], label="\n".join(data_node[1:])))
+#     for data_node in data_nodes:
+#         pydot_graph.add_node(pydot.Node(data_node[0], label="\n".join(data_node[1:])))
 
-    node_style = {'shape': 'oval',
-                  'fillcolor': 'gray',
-                  'style': 'rounded, filled'}
+#     node_style = {'shape': 'oval',
+#                   'fillcolor': 'gray',
+#                   'style': 'rounded, filled'}
 
-    if param_nodes is not None:
-        for param_node in param_nodes:
-            pydot_graph.add_node(pydot.Node(param_node[0], **node_style, label="\n".join(param_node[1:])))
+#     if param_nodes is not None:
+#         for param_node in param_nodes:
+#             pydot_graph.add_node(pydot.Node(param_node[0], **node_style, label="\n".join(param_node[1:])))
 
-    for edge in edges:
-        pydot_graph.add_edge(pydot.Edge(edge[0], edge[1]))
+#     for edge in edges:
+#         pydot_graph.add_edge(pydot.Edge(edge[0], edge[1]))
 
-    return pydot_graph
+#     return pydot_graph
 
 
-def create_png(sgraph, display_param_nodes=False, rankdir='TB', styles=None):
-    """Create a PNG object containing a graphiz-dot graph of the network,
-    as represented by SummaryGraph 'sgraph'.
+# def create_png(sgraph, display_param_nodes=False, rankdir='TB', styles=None):
+#     """Create a PNG object containing a graphiz-dot graph of the network,
+#     as represented by SummaryGraph 'sgraph'.
 
-    Args:
-        sgraph (SummaryGraph): the SummaryGraph instance to draw.
-        display_param_nodes (boolean): if True, draw the parameter nodes
-        rankdir: diagram direction.  'TB'/'BT' is Top-to-Bottom/Bottom-to-Top
-                 'LR'/'R/L' is Left-to-Rt/Rt-to-Left
-        styles: a dictionary of styles.  Key is module name.  Value is
-                a legal pydot style dictionary.  For example:
-                styles['conv1'] = {'shape': 'oval',
-                                   'fillcolor': 'gray',
-                                   'style': 'rounded, filled'}
-    """
+#     Args:
+#         sgraph (SummaryGraph): the SummaryGraph instance to draw.
+#         display_param_nodes (boolean): if True, draw the parameter nodes
+#         rankdir: diagram direction.  'TB'/'BT' is Top-to-Bottom/Bottom-to-Top
+#                  'LR'/'R/L' is Left-to-Rt/Rt-to-Left
+#         styles: a dictionary of styles.  Key is module name.  Value is
+#                 a legal pydot style dictionary.  For example:
+#                 styles['conv1'] = {'shape': 'oval',
+#                                    'fillcolor': 'gray',
+#                                    'style': 'rounded, filled'}
+#     """
 
-    def annotate_op_node(op):
-        if op['type'] == 'Conv':
-            return ["sh={}".format(size2str(op['attrs']['kernel_shape'])),
-                    "g={}".format(str(op['attrs']['group']))]
-        return ''   
+#     def annotate_op_node(op):
+#         if op['type'] == 'Conv':
+#             return ["sh={}".format(size2str(op['attrs']['kernel_shape'])),
+#                     "g={}".format(str(op['attrs']['group']))]
+#         return ''   
 
-    op_nodes = [op['name'] for op in sgraph.ops.values()]
-    data_nodes = []
-    param_nodes = []
-    for id, param in sgraph.params.items():
-        n_data = (id, str(volume(param['shape'])), str(param['shape']))
-        if data_node_has_parent(sgraph, id):
-            data_nodes.append(n_data)
-        else:
-            param_nodes.append(n_data)
-    edges = sgraph.edges
+#     op_nodes = [op['name'] for op in sgraph.ops.values()]
+#     data_nodes = []
+#     param_nodes = []
+#     for id, param in sgraph.params.items():
+#         n_data = (id, str(volume(param['shape'])), str(param['shape']))
+#         if data_node_has_parent(sgraph, id):
+#             data_nodes.append(n_data)
+#         else:
+#             param_nodes.append(n_data)
+#     edges = sgraph.edges
 
-    if not display_param_nodes:
-        # Use only the edges that don't have a parameter source
-        non_param_ids = op_nodes + [dn[0] for dn in data_nodes]
-        edges = [edge for edge in sgraph.edges if edge.src in non_param_ids]
-        param_nodes = None
+#     if not display_param_nodes:
+#         # Use only the edges that don't have a parameter source
+#         non_param_ids = op_nodes + [dn[0] for dn in data_nodes]
+#         edges = [edge for edge in sgraph.edges if edge.src in non_param_ids]
+#         param_nodes = None
 
-    op_nodes_desc = [(op['name'], op['type'], *annotate_op_node(op)) for op in sgraph.ops.values()]
-    pydot_graph = create_pydot_graph(op_nodes_desc, data_nodes, param_nodes, edges, rankdir, styles)
-    png = pydot_graph.create_png()
-    return png
+#     op_nodes_desc = [(op['name'], op['type'], *annotate_op_node(op)) for op in sgraph.ops.values()]
+#     pydot_graph = create_pydot_graph(op_nodes_desc, data_nodes, param_nodes, edges, rankdir, styles)
+#     png = pydot_graph.create_png()
+#     return png
 
 
 def draw_model_to_file(sgraph, png_fname, display_param_nodes=False, rankdir='TB', styles=None):
