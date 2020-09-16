@@ -40,28 +40,6 @@ import csv
 import apputils.image_classifier as classifier
 
 
-class _CSVLogger(object):
-    def __init__(self, fname, headers):
-        """Create the CSV file and write the column names"""
-        with open(fname, 'w') as f:
-            writer = csv.writer(f)
-            writer.writerow(headers)
-        self.fname = fname
-
-    def add_record(self, fields):
-        # We close the file each time to flush on every write, and protect against data-loss on crashes
-        with open(self.fname, 'a') as f:
-            writer = csv.writer(f)
-            writer.writerow(fields)
-            f.flush()
-
-
-class FTStatsLogger(_CSVLogger):
-    def __init__(self, fname):
-        headers = ['dir', 'name', 'macs', 'search_top1', 'top1', 'top5', 'loss']
-        super().__init__(fname, headers)
-
-
 class FinetuningTask(object):
     def __init__(self, args):
         self.args = args
@@ -94,15 +72,13 @@ class FinetuningProcess(Process):
         return
 
 
-def finetune_directory(ft_dir, stats_file, app_args, cleanup_ft_dir=False, checkpoints=None):
+def ft(ft_dir, app_args, cleanup_ft_dir=False):
     """Fine tune all the checkpoint files we find in the immediate-directory specified.
     For each checkpoint file we find, we create and queue a FinetuningTask.  
     A FinetuningProcess will pickup the FinetuningTask and process it.
     """
     print("Fine-tuning directory %s" % ft_dir)
-    if not checkpoints:
-        # Get a list of the checkpoint files
-        checkpoints = glob.glob(os.path.join(ft_dir, "*checkpoint.pth.tar"))
+    checkpoints = glob.glob(os.path.join(ft_dir, "*checkpoint.pth.tar"))
     assert checkpoints
     
     # We create a subdirectory, where we will write all of our output
@@ -151,15 +127,7 @@ def finetune_directory(ft_dir, stats_file, app_args, cleanup_ft_dir=False, check
     import pandas as pd
     df = pd.read_csv(os.path.join(ft_dir, "amc.csv"))
     assert len(results_dict) > 0
-    # Log some info for each checkpoint
-    for ckpt_name in sorted (results_dict.keys()):
-        net_search_results = df[df["ckpt_name"] == ckpt_name[:-len("_checkpoint.pth.tar")]]
-        search_top1 = net_search_results["top1"].iloc[0]
-        normalized_macs = net_search_results["normalized_macs"].iloc[0]
-        log_entry = (ft_output_dir, ckpt_name, normalized_macs, 
-                     search_top1, *results_dict[ckpt_name])
-        print("%s <>  %s: %.2f %.2f %.2f %.2f %.2f" % log_entry)
-        stats_file.add_record(log_entry)
+
     if cleanup_ft_dir:
         # cleanup: remove the "ft" directory
         shutil.rmtree(ft_output_dir)
@@ -204,13 +172,13 @@ if __name__ == '__main__':
 
     def add_parallel_args(argparser):
         group = argparser.add_argument_group('parallel fine-tuning')
-        group.add_argument('--processes', type=int, default=4,
+        group.add_argument('--processes', type=int, default=16,
                            help="Number of parallel experiment processes to run in parallel")
         group.add_argument('--scan-dir', metavar='DIR',default="/home/young/liuyixin/CAMC_disllter/logs/resnet56-cifar-amc0.7-100-800___2020.09.14-174644", required=True, help='path to checkpoints')
-        group.add_argument('--output-csv', metavar='DIR',default="ft_1epoch_results.csv", required=True, 
-                           help='Name of the CSV file containing the output')
-        group.add_argument('--top-performing-chkpts', action='store_true', default=False,
-                           help='Fine tune only the best performing discovered checkpoints (sorted by search-Top1)')
+        # group.add_argument('--output-csv', metavar='DIR',default="ft_1epoch_results.csv", required=True, 
+        #                    help='Name of the CSV file containing the output')
+        # group.add_argument('--top-performing-chkpts', action='store_true', default=False,
+        #                    help='Fine tune only the best performing discovered checkpoints (sorted by search-Top1)')
         group.add_argument('--validate-enable-factor', type=float, default=0.2,
                            help="What portion of the epochs to validate (0=never validate; 1=validate after every "
                                 "epoch; 0<factor<1 validate the last factor*ags.epochs epcohs."
@@ -257,10 +225,10 @@ if __name__ == '__main__':
     app_args = argparser.parse_args()
 
     print("Starting fine-tuning")
-    stats_file = FTStatsLogger(os.path.join(app_args.scan_dir, app_args.output_csv))
-    ft_dirs = get_immediate_subdirs(app_args.scan_dir)
-    for ft_dir in ft_dirs:
-        checkpoints = None
+    # stats_file = FTStatsLogger(os.path.join(app_args.scan_dir, app_args.output_csv))
+    # ft_dirs = get_immediate_subdirs(app_args.scan_dir)
+    # for ft_dir in ft_dirs:
+    #     checkpoints = None
         # if app_args.top_performing_chkpts:
         #     checkpoints = get_best_checkpoints(ft_dir)
-        finetune_directory(ft_dir, stats_file, app_args, checkpoints=checkpoints)
+    ft(app_args.scan_dir, app_args)

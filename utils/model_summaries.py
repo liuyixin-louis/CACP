@@ -28,9 +28,9 @@ from tabulate import tabulate
 import logging
 import torch
 import torch.optim
-import distiller
 from .summary_graph import SummaryGraph
 from data_loggers import *
+from utils import *
 
 msglogger = logging.getLogger()
 
@@ -49,10 +49,10 @@ def model_summary(model, what, dataset=None, logdir=''):
     elif what == 'sparsity':
         pylogger = PythonLogger(msglogger)
         csvlogger = CsvLogger(logdir=logdir)
-        distiller.log_weights_sparsity(model, -1, loggers=[pylogger, csvlogger])
+        log_weights_sparsity(model, -1, loggers=[pylogger, csvlogger])
     elif what == 'compute':
         try:
-            dummy_input = distiller.get_dummy_input(dataset, distiller.model_device(model))
+            dummy_input = get_dummy_input(dataset, model_device(model))
         except ValueError as e:
             print(e)
             return
@@ -89,19 +89,19 @@ def weights_sparsity_summary(model, return_total_sparsity=False, param_dims=[2, 
     for name, param in model.state_dict().items():
         # Extract just the actual parameter's name, which in this context we treat as its "type"
         if param.dim() in param_dims and any(type in name for type in ['weight', 'bias']):
-            _density = distiller.density(param)
+            _density = density(param)
             params_size += torch.numel(param)
             sparse_params_size += param.numel() * _density
             df.loc[len(df.index)] = ([
                 name,
-                distiller.size_to_str(param.size()),
+                size_to_str(param.size()),
                 torch.numel(param),
                 int(_density * param.numel()),
-                distiller.sparsity_cols(param)*100,
-                distiller.sparsity_rows(param)*100,
-                distiller.sparsity_ch(param)*100,
-                distiller.sparsity_2D(param)*100,
-                distiller.sparsity_3D(param)*100,
+                sparsity_cols(param)*100,
+                sparsity_rows(param)*100,
+                sparsity_ch(param)*100,
+                sparsity_2D(param)*100,
+                sparsity_3D(param)*100,
                 (1-_density)*100,
                 param.std().item(),
                 param.mean().item(),
@@ -144,7 +144,7 @@ def masks_sparsity_summary(model, scheduler, param_dims=[2, 4]):
             if mask is None:
                 _density = 1
             else:
-                _density = distiller.density(mask)
+                _density = density(mask)
             params_size += torch.numel(param)
             sparse_params_size += param.numel() * _density
             df.loc[len(df.index)] = ([name, (1-_density)*100])
@@ -166,11 +166,11 @@ def conv_visitor(self, input, output, df, model, memo):
     assert isinstance(self, torch.nn.Conv2d)
     if self in memo:
         return
-    weights_vol = distiller.volume(self.weight)
+    weights_vol = volume(self.weight)
 
     # Multiply-accumulate operations: MACs = volume(OFM) * (#IFM * K^2) / #Groups
     # Bias is ignored
-    macs = (distiller.volume(output) *
+    macs = (volume(output) *
             (self.in_channels / self.groups * self.kernel_size[0] * self.kernel_size[1]))
     attrs = 'k=' + '('+(', ').join(['%d' % v for v in self.kernel_size])+')'
     module_visitor(self, input, output, df, model, weights_vol, macs, attrs)
@@ -183,7 +183,7 @@ def fc_visitor(self, input, output, df, model, memo):
 
     # Multiply-accumulate operations: MACs = #IFM * #OFM
     # Bias is ignored
-    weights_vol = macs = distiller.volume(self.weight)
+    weights_vol = macs = volume(self.weight)
     module_visitor(self, input, output, df, model, weights_vol, macs)
 
 
@@ -191,11 +191,11 @@ def module_visitor(self, input, output, df, model, weights_vol, macs, attrs=None
     in_features_shape = input[0].size()
     out_features_shape = output.size()
 
-    mod_name = distiller.model_find_module_name(model, self)
+    mod_name = model_find_module_name(model, self)
     df.loc[len(df.index)] = ([mod_name, self.__class__.__name__,
                               attrs if attrs is not None else '',
-                              distiller.size_to_str(in_features_shape), distiller.volume(input[0]),
-                              distiller.size_to_str(out_features_shape), distiller.volume(output),
+                              size_to_str(in_features_shape), volume(input[0]),
+                              size_to_str(out_features_shape), volume(output),
                               int(weights_vol), int(macs)])
 
 
@@ -215,10 +215,10 @@ def model_performance_summary(model, dummy_input, batch_size=1):
     hook_handles = []
     memo = []
 
-    model = distiller.make_non_parallel_copy(model)
+    model = make_non_parallel_copy(model)
     model.apply(install_perf_collector)
     # Now run the forward path and collect the data
-    dummy_input = dummy_input.to(distiller.model_device(model))
+    dummy_input = dummy_input.to(model_device(model))
     model(dummy_input)
     # Unregister from the forward hooks
     for handle in hook_handles:
@@ -370,7 +370,7 @@ def create_png(sgraph, display_param_nodes=False, rankdir='TB', styles=None):
 
     def annotate_op_node(op):
         if op['type'] == 'Conv':
-            return ["sh={}".format(distiller.size2str(op['attrs']['kernel_shape'])),
+            return ["sh={}".format(size2str(op['attrs']['kernel_shape'])),
                     "g={}".format(str(op['attrs']['group']))]
         return ''   
 
@@ -378,7 +378,7 @@ def create_png(sgraph, display_param_nodes=False, rankdir='TB', styles=None):
     data_nodes = []
     param_nodes = []
     for id, param in sgraph.params.items():
-        n_data = (id, str(distiller.volume(param['shape'])), str(param['shape']))
+        n_data = (id, str(volume(param['shape'])), str(param['shape']))
         if data_node_has_parent(sgraph, id):
             data_nodes.append(n_data)
         else:
@@ -439,11 +439,11 @@ def draw_img_classifier_to_file(model, png_fname, dataset=None, display_param_no
         input_shape (tuple): List of integers representing the input shape.
                              Used only if 'dataset' is None
     """
-    dummy_input = distiller.get_dummy_input(dataset=dataset,
-                                            device=distiller.model_device(model),
+    dummy_input = get_dummy_input(dataset=dataset,
+                                            device=model_device(model),
                                             input_shape=input_shape)
     try:
-        non_para_model = distiller.make_non_parallel_copy(model)
+        non_para_model = make_non_parallel_copy(model)
         g = SummaryGraph(non_para_model, dummy_input)
 
         draw_model_to_file(g, png_fname, display_param_nodes, rankdir, styles)
@@ -463,9 +463,9 @@ def export_img_classifier_to_onnx(model, onnx_fname, dataset, add_softmax=True, 
         add_softmax: when True, adds softmax layer to the output model.
         kwargs: arguments to be passed to torch.onnx.export
     """
-    dummy_input = distiller.get_dummy_input(dataset, distiller.model_device(model))
+    dummy_input = get_dummy_input(dataset, model_device(model))
     # Pytorch doesn't support exporting modules wrapped in DataParallel
-    non_para_model = distiller.make_non_parallel_copy(model)
+    non_para_model = make_non_parallel_copy(model)
 
     try:
         if add_softmax:

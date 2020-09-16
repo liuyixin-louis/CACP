@@ -142,9 +142,9 @@ def config_verbose(verbose, display_summaries=False):
         loglevel = logging.INFO
         logging.getLogger().setLevel(logging.WARNING)
     for module in ["examples.auto_compression.amc",
-                   "distiller.apputils.image_classifier",
-                   "distiller.thinning",
-                   "distiller.pruning.ranked_structures_pruner"]:
+                   "apputils.image_classifier",
+                   "pruning.thinning",
+                   "pruning.ranked_structures_pruner"]:
         logging.getLogger(module).setLevel(loglevel)
 
     # display training progress summaries

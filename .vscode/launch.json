@@ -49,14 +49,11 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "args": ["/home/dataset/cifar",
-                "--scan-dir","/home/young/liuyixin/CAMC_disllter/logs/resnet56-cifar-amc0.7-100-800___2020.09.14-174644",
-                "--output-csv","ft_1epoch_results.csv",
+                "--scan-dir","/home/young/liuyixin/CAMC_disllter/ft/resnet56_cifar/amc0.3",
                 "--arch","resnet56_cifar",
                 "--lr","0.1",
-                "--epochs","60",
+                "--epochs","1",
                 "--compress","/home/young/liuyixin/CAMC_disllter/ft.yaml",
-                "--processes","16",
-                "--top-performing-chkpts",
                 "--vs","0"
                 
             ]

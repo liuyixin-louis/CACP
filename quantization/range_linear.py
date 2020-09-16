@@ -38,6 +38,7 @@ import torch.quantization
 import torch.nn.quantized as nnq
 import torch.nn.intrinsic.quantized as nniq
 from config import *
+from utils import *
 
 
 msglogger = logging.getLogger()
@@ -1936,7 +1937,7 @@ class PostTrainLinearQuantizer(Quantizer):
         for n in self.module_overrides_map:
             modules_dict = dict(self.model.named_modules())
             m = modules_dict[n]
-            if distiller.has_children(m) and not is_post_train_quant_wrapper(m, include_fpwrapper=False):
+            if has_children(m) and not is_post_train_quant_wrapper(m, include_fpwrapper=False):
                 continue
             qbits = self.module_qbits_map[n]
             d = OrderedDict()

@@ -13,7 +13,6 @@ chardet==3.0.4
 cycler==0.10.0
 decorator==4.4.2
 defusedxml==0.6.0
--e git+https://github.com/NervanaSystems/distiller@94af2955f99de8222bd83c1fc46f4000b3ecb130#egg=distiller
 entrypoints==0.3
 gast==0.2.2
 gitdb==4.0.5
@@ -71,7 +70,6 @@ protobuf==3.13.0
 ptyprocess==0.6.0
 py==1.9.0
 pycparser==2.20
-pydot==1.4.1
 pyglet==1.5.7
 Pygments==2.6.1
 pylint==2.1.1
@@ -91,7 +89,6 @@ scipy==1.5.2
 Send2Trash==1.5.0
 six==1.15.0
 smmap==3.0.4
-tabulate==0.8.3
 tensorboard==1.15.0
 tensorboardX==2.1
 tensorflow==1.15.3
