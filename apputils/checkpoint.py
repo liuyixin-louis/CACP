@@ -250,7 +250,7 @@ def load_checkpoint(model, chkpt_file, optimizer=None,
         quantizer.prepare_model(qmd['dummy_input'])
 
         if qmd.get('pytorch_convert', False):
-            msglogger.info('Converting Distiller PTQ model to PyTorch quantization API')
+            msglogger.info('Converting CACP PTQ model to PyTorch quantization API')
             model = quantizer.convert_to_pytorch(qmd['dummy_input'], backend=qmd.get('pytorch_convert_backend', None))
 
     if normalize_dataparallel_keys:

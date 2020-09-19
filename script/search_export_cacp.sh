@@ -1,0 +1,12 @@
+python cacp.py\
+ --arch resnet56_cifar /home/dataset/cifar --cacp-protocol mac-constrained-conditional-reward \
+ --etes 0.075 --cacp-ft-epochs 0 --cacp-prune-pattern channels \
+ --cacp-prune-method fm-reconstruction --cacp-agent-algo DDPG \
+ --cacp-cfg cacp_channels_config.yaml \
+ --cacp-rllib hanlab -j 4  \
+ --support-ratio 0.3 0.5 0.7 \
+ --cacp-heatup-episodes 100 --cacp-training-episodes 800 \
+ --out-dir logs \
+ --name resnet56-cifar10-CACP-100-800-mac-constrained-conditional-reward \
+ --deterministic --conditional --pretrained\
+ --state_dict checkpoints/pytorch_resnet_cifar10/cifar10-resnet56-f5939a66.pth

@@ -57,7 +57,7 @@ def adjust_ppo_output(ppo_pruning_action, action_high, action_low):
 from utils.net_wrapper import NetworkWrapper
 
 
-class DistillerWrapperEnvironment(gym.Env):
+class CACPWrapperEnvironment(gym.Env):
     def __init__(self, model, app_args, cacp_cfg, services):
         self.pylogger = data_loggers.PythonLogger(
             logging.getLogger("examples.auto_compression.cacp.summaries"))
@@ -117,7 +117,7 @@ class DistillerWrapperEnvironment(gym.Env):
 
         def acceptance_criterion(m, mod_names):
             # Collect feature-maps only for Conv2d layers, if they are in our modules list.
-            return isinstance(m, (torch.nn.Conv2d, torch.nn.Linear)) and m.distiller_name in mod_names
+            return isinstance(m, (torch.nn.Conv2d, torch.nn.Linear)) and m.cacp_name in mod_names
 
         # For feature-map reconstruction we need to collect a representative set
         # of inter-layer feature-maps

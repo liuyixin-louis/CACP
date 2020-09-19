@@ -343,7 +343,7 @@ def ptq_coordinate_search(quantizer, dummy_input, eval_fn, test_fn=None, method=
     Searches for the optimal post-train quantization configuration (scale/zero_points)
     for a model using numerical methods, as described by scipy.optimize.minimize.
     Args:
-        quantizer (distiller.quantization.PostTrainLinearQuantizer): A configured PostTrainLinearQuantizer object
+        quantizer (quantization.PostTrainLinearQuantizer): A configured PostTrainLinearQuantizer object
           containing the model being quantized
         dummy_input: an sample expected input to the model
         eval_fn (callable): evaluation function for the model. Assumed it has a signature of the form

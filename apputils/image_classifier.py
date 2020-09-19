@@ -213,7 +213,7 @@ def init_classifier_compression_arg_parser(include_ptq_lapq_args=False):
     '''
     SUMMARY_CHOICES = ['sparsity', 'compute', 'model', 'modules', 'png', 'png_w_params']
 
-    parser = argparse.ArgumentParser(description='Distiller image classification model compression')
+    parser = argparse.ArgumentParser(description='CACP image classification model compression')
     parser.add_argument('data', metavar='DATASET_DIR', help='path to dataset',default="/home/dataset/cifar")
     parser.add_argument('--arch', '-a', metavar='ARCH', default='resnet18', type=lambda s: s.lower(),
                         choices=models.ALL_MODEL_NAMES,
@@ -897,9 +897,9 @@ def earlyexit_validate_stats(args):
 
 
 def _convert_ptq_to_pytorch(model, args):
-    msglogger.info('Converting Distiller PTQ model to PyTorch quantization API')
+    msglogger.info('Converting CACP PTQ model to PyTorch quantization API')
     dummy_input = utils.get_dummy_input(input_shape=model.input_shape)
-    model = quantization.convert_distiller_ptq_model_to_pytorch(model, dummy_input, backend=args.qe_pytorch_backend)
+    model = quantization.ptq_model_to_pytorch(model, dummy_input, backend=args.qe_pytorch_backend)
     msglogger.debug('\nModel after conversion:\n{}'.format(model))
     args.device = 'cpu'
     return model

@@ -262,7 +262,7 @@ def ptq_greedy_search(model, dummy_input, eval_fn, calib_eval_fn=None,
           assumes signature
           `def module_override_gen_fn(module: nn.Module,
                                       module_name: str,
-                                      sg: distiller.SummaryGraph,
+                                      sg: cacp.SummaryGraph,
                                       overrides_dict: OrderedDict,
                                       **kwargs)-> Generator[OrderedDict, None, None]`
         input_override_gen_fn: Same as module_override_gen_fn, only quantized inputs to the top level layers.

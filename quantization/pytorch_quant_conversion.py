@@ -23,34 +23,32 @@ from copy import deepcopy
 import quantization
 import utils
 
-
-# import distiller
 from .q_utils import LinearQuantMode, is_linear_quant_mode_symmetric
 
 
-def need_reduce_range(distiller_quant_mode, torch_dtype):
-    return torch.backends.quantized.engine == 'fbgemm' and not(is_linear_quant_mode_symmetric(distiller_quant_mode) and
+def need_reduce_range(quant_mode, torch_dtype):
+    return torch.backends.quantized.engine == 'fbgemm' and not(is_linear_quant_mode_symmetric(quant_mode) and
                                                                torch_dtype == torch.quint8)
 
 
-def distiller_qparams_to_pytorch(scale, zp, num_bits, distiller_mode, dest_dtype, reduce_range=False):
+def qparams_to_pytorch(scale, zp, num_bits, mode, dest_dtype, reduce_range=False):
     """
-    Convert quantization parameters (scale and zero-point) calculated by Distiller APIs to quantization parameters
+    Convert quantization parameters (scale and zero-point) calculated by CACP APIs to quantization parameters
     compatible with PyTorch quantization APIs.
 
-    By "calculated with Distiller APIs" we mean calculated using either of:
-      * distiller.quantization.symmetric_linear_quantization_params
-      * distiller.quantization.asymmetric_linear_quantization_params
+    By "calculated with CACP APIs" we mean calculated using either of:
+      * quantization.symmetric_linear_quantization_params
+      * quantization.asymmetric_linear_quantization_params
 
-    The main differences between quantization parameters as calculated by Distiller and PyTorch:
-      * pytorch_scale = 1 / distiller_scale
-      * pytorch_zero_point = -distiller_zero_point
+    The main differences between quantization parameters as calculated by CACP and PyTorch:
+      * pytorch_scale = 1 / scale
+      * pytorch_zero_point = -zero_point
 
     Args:
-        scale (torch.Tensor): Scale factor calcualted by Distiller
-        zp (torch.Tensor): Zero point calcualted by Distiller
-        num_bits (int): Number of bits used for quantization in Distiller
-        distiller_mode (distiller.quantization.LinearQuantMode): The quantization mode used in Distiller
+        scale (torch.Tensor): Scale factor calcualted by CACP
+        zp (torch.Tensor): Zero point calcualted by CACP
+        num_bits (int): Number of bits used for quantization in CACP
+        mode (quantization.LinearQuantMode): The quantization mode used in CACP
         dest_dtype (torch.dtype): PyTorch quantized dtype to convert to. Must be one of: torch.quint8, torch.qint8
         reduce_range (bool): Reduces the range of the quantized data type by 1 bit. This should mainly be used for
           quantized activations with the "fbgemm" PyTorch backend - it prevents overflows. See:
@@ -61,69 +59,69 @@ def distiller_qparams_to_pytorch(scale, zp, num_bits, distiller_mode, dest_dtype
     """
     assert dest_dtype in (torch.qint8, torch.quint8), 'Must specify one of the quantized PyTorch dtypes'
 
-    distiller_symmetric = is_linear_quant_mode_symmetric(distiller_mode)
-    if distiller_symmetric and dest_dtype == torch.quint8:
+    symmetric = is_linear_quant_mode_symmetric(mode)
+    if symmetric and dest_dtype == torch.quint8:
         reduce_range = False
 
-    distiller_asym_signed = distiller_mode == LinearQuantMode.ASYMMETRIC_SIGNED
+    asym_signed = mode == LinearQuantMode.ASYMMETRIC_SIGNED
 
     if reduce_range:
         assert num_bits == 8, 'reduce_range needed only when num_bits == 8'
-        if distiller_symmetric and dest_dtype == torch.quint8:
+        if symmetric and dest_dtype == torch.quint8:
             raise NotImplementedError('reduce_range + symmetric + quint8 not supported in PyTorch')
         num_bits = 7
-        if distiller_symmetric:
+        if symmetric:
             ratio = 63. / 127.
         else:
             ratio = 127. / 255.
-            zp_offset = 128 if distiller_asym_signed else 0
+            zp_offset = 128 if asym_signed else 0
             zp = ((zp - zp_offset) * ratio + zp_offset / 2).round()
         scale = scale * ratio
 
     scale = scale.cpu().squeeze()
     zp = zp.cpu().squeeze().long()
 
-    # Distiller scale is the reciprocal of PyTorch scale
+    # CACP scale is the reciprocal of PyTorch scale
     scale_torch = 1. / scale
 
     n_bins_half = 2 ** (num_bits - 1)
 
-    if distiller_symmetric:
-        # In Distiller symmetric is always signed with zero-point = 0, but in PyTorch it can be
+    if symmetric:
+        # In symmetric is always signed with zero-point = 0, but in PyTorch it can be
         # unsigned in which case we offset the zero-point to the middle of the quantized range
         zp_torch = zp if dest_dtype == torch.qint8 else torch.full_like(zp, n_bins_half)
     else:
         pytorch_signed = dest_dtype == torch.qint8
-        if distiller_asym_signed and not pytorch_signed:
+        if asym_signed and not pytorch_signed:
             zp = zp - n_bins_half
-        elif not distiller_asym_signed and pytorch_signed:
+        elif not asym_signed and pytorch_signed:
             zp = zp + n_bins_half
-        # Distiller subtracts the zero-point when quantizing, PyTorch adds it.
-        # So we negate the zero-point calculated in Distiller
+        # subtracts the zero-point when quantizing, PyTorch adds it.
+        # So we negate the zero-point calculated in CACP
         zp_torch = -zp
     return scale_torch, zp_torch
 
 
-def distiller_quantized_tensor_to_pytorch(tensor: torch.Tensor, scale, zp, num_bits, distiller_mode, dest_dtype,
+def quantized_tensor_to_pytorch(tensor: torch.Tensor, scale, zp, num_bits, mode, dest_dtype,
                                           per_channel=False, channel_dim=0):
     """
-    Convert a tensor quantized with quantization parameters calculated by Distiller to a PyTorch "native" quantized
+    Convert a tensor quantized with quantization parameters calculated by CACP to a PyTorch "native" quantized
     tensor.
 
     We refer to quantization parameters calculated using either of:
-      * distiller.quantization.symmetric_linear_quantization_params
-      * distiller.quantization.asymmetric_linear_quantization_params
+      * quantization.symmetric_linear_quantization_params
+      * quantization.asymmetric_linear_quantization_params
 
     And to tensors quantized using either of:
-      * distiller.quantization.linear_quantize
-      * distiller.quantization.linear_quantize_clamp
+      * quantization.linear_quantize
+      * quantization.linear_quantize_clamp
 
     Args:
-        tensor (torch.Tensor): The tensor quantized in Distiller
-        scale (torch.Tensor): Scale factor calcualted by Distiller
-        zp (torch.Tensor): Zero point calcualted by Distiller
-        num_bits (int): Number of bits used for quantization in Distiller
-        distiller_mode (distiller.quantization.LinearQuantMode): The quantization mode used in Distiller
+        tensor (torch.Tensor): The tensor quantized in CACP
+        scale (torch.Tensor): Scale factor calcualted by CACP
+        zp (torch.Tensor): Zero point calcualted by CACP
+        num_bits (int): Number of bits used for quantization in CACP
+        mode (quantization.LinearQuantMode): The quantization mode used in CACP
         dest_dtype (torch.dtype): PyTorch quantized dtype to convert to. Must be one of: torch.quint8, torch.qint8
         per_channel (bool): Flag in indicating if tensor was quantized per-channel
         channel_dim (int): If per_channel is set, this indicates the dimension of the channel in the tensor
@@ -132,7 +130,7 @@ def distiller_quantized_tensor_to_pytorch(tensor: torch.Tensor, scale, zp, num_b
         PyTorch quantized tensor (dtype one of torch.quint8 / torch.qint8 / torch.qint32)
     """
     assert (tensor == tensor.int()).all(), 'Tensor does not appear to be quantized'
-    converted_scale, converted_zp = distiller_qparams_to_pytorch(scale, zp, num_bits, distiller_mode, dest_dtype,
+    converted_scale, converted_zp = qparams_to_pytorch(scale, zp, num_bits, mode, dest_dtype,
                                                                  reduce_range=False)
     zp_diff = -converted_zp.view(zp.shape) - zp
 
@@ -166,7 +164,7 @@ def _ptq_convert_pass_replace_range_linear_wrappers(module):
                 d = OrderedDict()
                 for idx, qmd in m.inputs_quant_metadata_fallback.items():
                     qset = m.inputs_quant_settings_overrides.get(idx, m.output_quant_settings)
-                    scale, zp = distiller_qparams_to_pytorch(qmd.scale, qmd.zero_point, qset.num_bits,
+                    scale, zp = qparams_to_pytorch(qmd.scale, qmd.zero_point, qset.num_bits,
                                                              qset.quant_mode, torch.quint8,
                                                              need_reduce_range(qset.quant_mode, torch.quint8))
                     d[idx] = (scale, zp, torch.quint8)
@@ -176,7 +174,7 @@ def _ptq_convert_pass_replace_range_linear_wrappers(module):
         elif utils.has_children(m):
             new_m = _ptq_convert_pass_replace_range_linear_wrappers(m)
         elif not isinstance(m, nn.Identity):
-            # Module not quantized in Distiller, possibly need to de-quant input
+            # Module not quantized in CACP, possibly need to de-quant input
             new_m = ConditionalDeQuantizeWrapper(m)
         reassign[n] = new_m
 
@@ -266,16 +264,16 @@ def _ptq_convert_pass_remove_redundant_quant_dequant(model, dummy_input):
     return model
 
 
-def convert_distiller_ptq_model_to_pytorch(model, dummy_input, backend='fbgemm'):
+def ptq_model_to_pytorch(model, dummy_input, backend='fbgemm'):
     """
-    Convert a model quantized using distiller.quantization.PostTrainLinearQuantizer to model comprised solely of
+    Convert a model quantized using quantization.PostTrainLinearQuantizer to model comprised solely of
     native PyTorch static post-training quantization modules and operators.
 
     In the current implementation this conversion CANNOT be done in-place.
 
     Conversion is done in 2 passes:
       * First pass: Replace all RangeLinearQuantWrapper modules with a quantize operation followed by the respective
-        native PyTorch module. Modules that weren't quantized by Distiller are wrapped with a de-quantize operation.
+        native PyTorch module. Modules that weren't quantized by CACP are wrapped with a de-quantize operation.
       * Second pass: Perform dummy forward pass over the model and remove redundant de-quant --> quant sequences.
 
     The converted model returns a de-quantized output. If the last layer of the model is quantized, then an extra
@@ -299,7 +297,7 @@ def convert_distiller_ptq_model_to_pytorch(model, dummy_input, backend='fbgemm')
     from quantization import PostTrainLinearQuantizer
     if not hasattr(model, 'quantizer_metadata') or model.quantizer_metadata['type'] != PostTrainLinearQuantizer:
         raise ValueError('Conversion to PyTorch native quantization supported only for models quantized '
-                         'using distiller.quantization.PostTrainLinearQuantizer')
+                         'using quantization.PostTrainLinearQuantizer')
 
     if dummy_input is None:
         raise ValueError('Valid dummy input required for converting PTQ model to PyTorch')

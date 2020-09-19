@@ -29,7 +29,7 @@ class MagnitudeParameterPruner(object):
     def __init__(self, name, thresholds, **kwargs):
         """
         Usually, a Pruner is constructed by the compression schedule parser
-        found in distiller/config.py.
+        found in cacp/config.py.
         The constructor is passed a dictionary of thresholds, as explained below.
 
         Args:

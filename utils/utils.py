@@ -349,7 +349,7 @@ def assign_layer_fq_names(container, name=None):
     fully-qualified names for convenience.
     """
     for name, module in container.named_modules():
-        module.distiller_name = name
+        module.cacp_name = name
 
 
 def find_module_by_fq_name(model, fq_mod_name):
@@ -365,7 +365,7 @@ def find_module_by_fq_name(model, fq_mod_name):
         The module or None, if the module was not found.
     """
     for module in model.modules():
-        if hasattr(module, 'distiller_name') and fq_mod_name == module.distiller_name:
+        if hasattr(module, 'cacp_name') and fq_mod_name == module.cacp_name:
             return module
     return None
 

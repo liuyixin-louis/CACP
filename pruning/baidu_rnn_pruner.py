@@ -14,7 +14,6 @@
 # limitations under the License.
 #
 
-# import distiller
 # from . import create_mask_threshold_criterion
 import pruning
 
@@ -28,7 +27,7 @@ class BaiduRNNPruner(object):
 
     This implementation slightly differs from the algorithm original paper in that
     the algorithm changes the pruning rate at the training-step granularity, while
-    Distiller controls the pruning rate at epoch granularity.
+    cacp controls the pruning rate at epoch granularity.
 
     Equation (1):
 

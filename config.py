@@ -21,8 +21,8 @@ There are three ways to configure an instance of CompressionScheduler:
 1. Directly create and program scheduling objects.  For example:
     # Element-wise sparasity
     sparsity_levels = {net_param: sparsity_level}
-    pruner = distiller.pruning.SparsityLevelParameterPruner(name='sensitivity', levels=sparsity_levels)
-    policy = distiller.PruningPolicy(pruner, pruner_args=None)
+    pruner = cacp.pruning.SparsityLevelParameterPruner(name='sensitivity', levels=sparsity_levels)
+    policy = cacp.PruningPolicy(pruner, pruner_args=None)
     scheduler = CompressionScheduler(model)
     scheduler.add_policy(policy, epochs=[0, 2, 4])
 2. Create a dictionary containing the configuration.

@@ -20,7 +20,7 @@ import numpy as np
 from .eltwise import EltwiseAdd, EltwiseMult
 from itertools import product
 
-__all__ = ['DistillerLSTMCell', 'DistillerLSTM', 'convert_model_to_distiller_lstm']
+__all__ = ['LSTMCell', 'LSTM', 'convert_model_to_lstm']
 
 
 # There is prevalent use of looping that depends on tensor sizes done in this implementation.
@@ -30,7 +30,7 @@ __all__ = ['DistillerLSTMCell', 'DistillerLSTM', 'convert_model_to_distiller_lst
 # TODO: Check if/how it's possible to have a tracer-friendly implementation
 
 
-class DistillerLSTMCell(nn.Module):
+class LSTMCell(nn.Module):
     """
     A single LSTM block.
     The calculation of the output takes into account the input and the previous output and cell state:
@@ -42,7 +42,7 @@ class DistillerLSTMCell(nn.Module):
 
     """
     def __init__(self, input_size, hidden_size, bias=True):
-        super(DistillerLSTMCell, self).__init__()
+        super(LSTMCell, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.bias = bias
@@ -105,7 +105,7 @@ class DistillerLSTMCell(nn.Module):
 
     @staticmethod
     def from_pytorch_impl(lstmcell: nn.LSTMCell):
-        module = DistillerLSTMCell(input_size=lstmcell.input_size, hidden_size=lstmcell.hidden_size, bias=lstmcell.bias)
+        module = LSTMCell(input_size=lstmcell.input_size, hidden_size=lstmcell.hidden_size, bias=lstmcell.bias)
         module.fc_gate_x.weight = nn.Parameter(lstmcell.weight_ih.clone().detach())
         module.fc_gate_h.weight = nn.Parameter(lstmcell.weight_hh.clone().detach())
         if lstmcell.bias:
@@ -122,7 +122,7 @@ def process_sequence_wise(cell, x, h=None):
     """
     Process the entire sequence through an LSTMCell.
     Args:
-         cell (DistillerLSTMCell): the cell.
+         cell (LSTMCell): the cell.
          x (torch.Tensor): the input
          h (tuple of torch.Tensor-s): the hidden states of the LSTMCell.
     Returns:
@@ -167,7 +167,7 @@ def _unpack_bidirectional_input_h(h):
     return h_front, h_back
 
 
-class DistillerLSTM(nn.Module):
+class LSTM(nn.Module):
     """
     A modular implementation of an LSTM module.
     Args:
@@ -183,7 +183,7 @@ class DistillerLSTM(nn.Module):
     """
     def __init__(self, input_size, hidden_size, num_layers, bias=True, batch_first=False,
                  dropout=0.5, bidirectional=False, bidirectional_type=2):
-        super(DistillerLSTM, self).__init__()
+        super(LSTM, self).__init__()
         if num_layers < 1:
             raise ValueError("Number of layers has to be at least 1.")
         self.input_size = input_size
@@ -226,9 +226,9 @@ class DistillerLSTM(nn.Module):
 
     def _create_cells_list(self, hidden_size_scale=1):
         # We always have the first layer
-        cells = nn.ModuleList([DistillerLSTMCell(self.input_size, self.hidden_size, self.bias)])
+        cells = nn.ModuleList([LSTMCell(self.input_size, self.hidden_size, self.bias)])
         for i in range(1, self.num_layers):
-            cells.append(DistillerLSTMCell(hidden_size_scale * self.hidden_size, self.hidden_size, self.bias))
+            cells.append(LSTMCell(hidden_size_scale * self.hidden_size, self.hidden_size, self.bias))
         return cells
 
     def forward(self, x, h=None):
@@ -400,7 +400,7 @@ class DistillerLSTM(nn.Module):
     def from_pytorch_impl(lstm: nn.LSTM):
         bidirectional = lstm.bidirectional
 
-        module = DistillerLSTM(lstm.input_size, lstm.hidden_size, lstm.num_layers, bias=lstm.bias,
+        module = LSTM(lstm.input_size, lstm.hidden_size, lstm.num_layers, bias=lstm.bias,
                                batch_first=lstm.batch_first,
                                dropout=lstm.dropout, bidirectional=bidirectional)
         param_gates = ['i', 'h']
@@ -434,18 +434,18 @@ class DistillerLSTM(nn.Module):
                 self.bidirectional)
 
 
-def convert_model_to_distiller_lstm(model: nn.Module):
+def convert_model_to_lstm(model: nn.Module):
     """
-    Replaces all `nn.LSTM`s and `nn.LSTMCell`s in the model with distiller versions.
+    Replaces all `nn.LSTM`s and `nn.LSTMCell`s in the model with cacp versions.
     Args:
         model (nn.Module): the model
     """
     if isinstance(model, nn.LSTMCell):
-        return DistillerLSTMCell.from_pytorch_impl(model)
+        return LSTMCell.from_pytorch_impl(model)
     if isinstance(model, nn.LSTM):
-        return DistillerLSTM.from_pytorch_impl(model)
+        return LSTM.from_pytorch_impl(model)
     for name, module in model.named_children():
-        module = convert_model_to_distiller_lstm(module)
+        module = convert_model_to_lstm(module)
         setattr(model, name, module)
 
     return model

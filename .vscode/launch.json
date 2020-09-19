@@ -29,8 +29,7 @@
  "--name","resnet56-cifar-cacp0.7-100-800",
  "--deterministic","--conditional",
  "--pretrained",
- "--state_dict","/home/young/liuyixin/Ccacp_disllter/checkpoints/pytorch_resnet_cifar10/cifar10-resnet56-f5939a66.pth"
-//  "--resume","/home/young/liuyixin/Ccacp_disllter/checkpoints/pytorch_resnet_cifar10/cifar10-resnet56-f5939a66.pth"
+ "--state_dict","/home/young/liuyixin/CAMC_disllter/checkpoints/pytorch_resnet_cifar10/cifar10-resnet56-f5939a66.pth"
             ]
         }
     ]

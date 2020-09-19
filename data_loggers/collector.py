@@ -96,7 +96,7 @@ class ActivationStatsCollector(object):
         # for wrapped modules inside post-training quantization wrapper classes.
         # When doing PTQ, the outputs of these wrapped modules are actually intermediate results
         # which are not relevant for tracking.
-        self._dont_collect_list = [module.wrapped_module.distiller_name for module in model.modules() if
+        self._dont_collect_list = [module.wrapped_module.cacp_name for module in model.modules() if
                                    is_post_train_quant_wrapper(module)]
 
     def value(self):
@@ -166,7 +166,7 @@ class ActivationStatsCollector(object):
         raise NotImplementedError
 
     def _should_collect(self, module):
-        if module.distiller_name in self._dont_collect_list:
+        if module.cacp_name in self._dont_collect_list:
             return False
         # In general, we only collect stats for "leaf" modules.
         # We make an exception for models that were quantized with 'PostTrainLinearQuantizer'. In these
@@ -244,17 +244,17 @@ class SummaryActivationStatsCollector(ActivationStatsCollector):
                                  "For example in TorchVision's ResNet model, self.relu = nn.ReLU(inplace=True) is "
                                  "instantiated once, but used multiple times.  This is not permissible when using "
                                  "instances of ActivationStatsCollector.".
-                                 format(module.distiller_name, type(module)))
+                                 format(module.cacp_name, type(module)))
             else:
-                msglogger.info("Exception in _activation_stats_cb: {} {}".format(module.distiller_name, type(module)))
+                msglogger.info("Exception in _activation_stats_cb: {} {}".format(module.cacp_name, type(module)))
                 raise
 
     def _start_counter(self, module):
         if not hasattr(module, self.stat_name):
             setattr(module, self.stat_name, WeightedAverageValueMeter())
             # Assign a name to this summary
-            if hasattr(module, 'distiller_name'):
-                getattr(module, self.stat_name).name = module.distiller_name
+            if hasattr(module, 'cacp_name'):
+                getattr(module, self.stat_name).name = module.cacp_name
             else:
                 getattr(module, self.stat_name).name = '_'.join((
                     module.__class__.__name__, str(id(module))))
@@ -389,7 +389,7 @@ class RecordsActivationStatsCollector(ActivationStatsCollector):
 
     def _collect_activations_stats(self, module, activation_stats, name=''):
         if hasattr(module, "statistics_records"):
-            activation_stats[module.distiller_name] = module.statistics_records
+            activation_stats[module.cacp_name] = module.statistics_records
 
 
 class _QuantStatsRecord(object):
@@ -414,7 +414,7 @@ def _verify_no_dataparallel(model):
     if torch.nn.DataParallel in [type(m) for m in model.modules()]:
         raise ValueError('Model contains DataParallel modules, which can cause inaccurate stats collection. '
                          'Either create a model without DataParallel modules, or call '
-                         'distiller.utils.make_non_parallel_copy on the model before invoking the collector')
+                         'utils.make_non_parallel_copy on the model before invoking the collector')
 
 
 class QuantCalibrationStatsCollector(ActivationStatsCollector):
@@ -619,12 +619,12 @@ class QuantCalibrationStatsCollector(ActivationStatsCollector):
         if not hasattr(module, 'quant_stats'):
             return
 
-        activation_stats[module.distiller_name] = OrderedDict()
+        activation_stats[module.cacp_name] = OrderedDict()
         if module.quant_stats.inputs:
-            activation_stats[module.distiller_name]['inputs'] = OrderedDict()
+            activation_stats[module.cacp_name]['inputs'] = OrderedDict()
             for idx, sr in enumerate(module.quant_stats.inputs):
-                activation_stats[module.distiller_name]['inputs'][idx] = sr
-        activation_stats[module.distiller_name]['output'] = module.quant_stats.output
+                activation_stats[module.cacp_name]['inputs'][idx] = sr
+        activation_stats[module.cacp_name]['output'] = module.quant_stats.output
 
     def save(self, fname):
         if not fname.endswith('.yaml'):
@@ -710,16 +710,16 @@ class ActivationHistogramsCollector(ActivationStatsCollector):
 
         with torch.no_grad():
             for idx, input in enumerate(inputs):
-                stat_min, stat_max = self._get_min_max(module.distiller_name, 'inputs', idx)
+                stat_min, stat_max = self._get_min_max(module.cacp_name, 'inputs', idx)
                 curr_hist = get_hist(input, stat_min, stat_max)
                 module.input_hists[idx] += curr_hist
 
-            stat_min, stat_max = self._get_min_max(module.distiller_name, 'output')
+            stat_min, stat_max = self._get_min_max(module.cacp_name, 'output')
             curr_hist = get_hist(output, stat_min, stat_max)
             module.output_hist += curr_hist
 
     def _reset(self, module):
-        num_inputs = len(self.act_stats[module.distiller_name]['inputs'])
+        num_inputs = len(self.act_stats[module.cacp_name]['inputs'])
         module.input_hists = module.input_hists = [torch.zeros(self.nbins) for _ in range(num_inputs)]
         module.output_hist = torch.zeros(self.nbins)
 
@@ -744,14 +744,14 @@ class ActivationHistogramsCollector(ActivationStatsCollector):
         stats_od = OrderedDict()
         inputs_od = OrderedDict()
         for idx, hist in enumerate(module.input_hists):
-            inputs_od[idx] = get_hist_entry(*self._get_min_max(module.distiller_name, 'inputs', idx),
+            inputs_od[idx] = get_hist_entry(*self._get_min_max(module.cacp_name, 'inputs', idx),
                                             module.input_hists[idx])
 
-        output_od = get_hist_entry(*self._get_min_max(module.distiller_name, 'output'), module.output_hist)
+        output_od = get_hist_entry(*self._get_min_max(module.cacp_name, 'output'), module.output_hist)
 
         stats_od['inputs'] = inputs_od
         stats_od['output'] = output_od
-        activation_stats[module.distiller_name] = stats_od
+        activation_stats[module.cacp_name] = stats_od
 
     def save(self, fname):
         hist_dict = self.value()
@@ -828,7 +828,7 @@ class RawActivationsCollector(ActivationStatsCollector):
 
         if isinstance(module.raw_outputs, list) and len(module.raw_outputs) > 0:
             module.raw_outputs = torch.stack(module.raw_outputs)
-        activation_stats[module.distiller_name] = module.raw_outputs
+        activation_stats[module.cacp_name] = module.raw_outputs
 
     def save(self, dir_name):
         if not os.path.isdir(dir_name):

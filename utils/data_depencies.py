@@ -47,7 +47,7 @@ def _find_dependencies_channels(sgraph, layers, layer_name, dependencies_list):
             # This is a group-wise convolution, and a special one at that (groups == in_channels).
             _find_dependencies_channels(sgraph, layers, predecessor, dependencies_list)
         elif prev['attrs']['group'] != 1:
-            raise ValueError("Distiller AutoCompression currently does not "
+            raise ValueError("CACP AutoCompression currently does not "
                              "handle this convolution groups configuration {} "
                              "(layer={} {}\n{})".format(
                              prev['attrs']['group'], predecessor, prev, layers[predecessor]))
@@ -65,5 +65,5 @@ def _find_dependencies_filters(sgraph, layers, layer_name, dependencies_list):
                 # This is a group-wise convolution, and a special one at that (groups == in_channels).
                 _find_dependencies_filters(sgraph, layers, successor, dependencies_list)
             elif next['attrs']['group'] != 1:
-                raise ValueError("Distiller AutoCompression currently does not handle this conv.groups configuration")    
+                raise ValueError("CACP AutoCompression currently does not handle this conv.groups configuration")    
  

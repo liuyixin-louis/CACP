@@ -35,8 +35,8 @@ def basic_featuremaps_caching_fwd_hook(module, input, output, intermediate_fms):
     lists (on the CPU) to protect against race-conditions and synchronize the data.
     Using the CPU to store the lists also benefits from the larger CPU DRAM.
     """
-    intermediate_fms['output_fms'][module.distiller_name].append(output)
-    intermediate_fms['input_fms'][module.distiller_name].append(input[0])
+    intermediate_fms['output_fms'][module.cacp_name].append(output)
+    intermediate_fms['input_fms'][module.cacp_name].append(input[0])
 
 import utils
 
@@ -48,8 +48,8 @@ def collect_intermediate_featuremap_samples(model, forward_fn, module_filter_fn,
 
     def install_io_collectors(m, intermediate_fms):
         if module_filter_fn(m):
-            intermediate_fms['output_fms'][m.distiller_name] = []
-            intermediate_fms['input_fms'][m.distiller_name] = []
+            intermediate_fms['output_fms'][m.cacp_name] = []
+            intermediate_fms['input_fms'][m.cacp_name] = []
             hook_handles.append(m.register_forward_hook(partial(fm_caching_fwd_hook, 
                                                                 intermediate_fms=intermediate_fms)))
 

@@ -1,5 +1,4 @@
 logs/
-checkpoints/
 experiments/
 backup/
 .vscode/

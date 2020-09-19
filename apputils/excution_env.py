@@ -65,7 +65,7 @@ def log_execution_env_state(config_paths=None, logdir=None):
             repo = Repo(os.path.join(os.path.dirname(__file__), '..', '..'))
             assert not repo.bare
         except InvalidGitRepositoryError:
-            logger.debug("Cannot find a Git repository.  You probably downloaded an archive of Distiller.")
+            logger.debug("Cannot find a Git repository.  You probably downloaded an archive of CACP.")
             return
 
         if repo.is_dirty():

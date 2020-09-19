@@ -18,7 +18,7 @@ import logging
 import traceback
 from functools import partial
 import utils
-from environment import DistillerWrapperEnvironment, Observation
+from environment import CACPWrapperEnvironment, Observation
 import apputils as apputils
 import apputils.image_classifier as classifier
 from rewards import reward_factory
@@ -124,7 +124,7 @@ def train_auto_compressor(model, args, optimizer_data, validate_fn, save_checkpo
     cacp_cfg.reward_fn, cacp_cfg.action_constrain_fn = reward_factory(args.cacp_protocol)
 
     def create_environment():
-        env = DistillerWrapperEnvironment(model, app_args, cacp_cfg, services)
+        env = CACPWrapperEnvironment(model, app_args, cacp_cfg, services)
         env.cacp_cfg.ddpg_cfg.replay_buffer_size = cacp_cfg.ddpg_cfg.num_heatup_episodes * env.steps_per_episode
         return env
 

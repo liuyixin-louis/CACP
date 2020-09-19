@@ -572,17 +572,17 @@ class FMReconstructionChannelPruner(_RankedStructureParameterPruner):
         For reconstruction of weights, we need to collect pairs of (layer_input, layer_output)
         using a sample subset of the input dataset.
         This is a forward-hook function, invoked from forward_hooks of Convolution layers.
-        Use this in conjunction with distiller.features_collector.collect_intermediate_featuremap_samples,
+        Use this in conjunction with cacp.features_collector.collect_intermediate_featuremap_samples,
         which orchestrates the process of feature-map collection.
 
         This foward-hook samples random points in the output feature-maps of 'module'.
-        After collecting the feature-map samples, distiller.FMReconstructionChannelPruner can be used.
+        After collecting the feature-map samples, cacp.FMReconstructionChannelPruner can be used.
 
         Arguments:
             module - the module who's forward_hook is invoked
             input, output - the input and output arguments to the forward_hook
             intermediate_fms - a dictionary of lists of feature-map samples, per layer 
-                (use module.distiller_name as key)
+                (use module.cacp_name as key)
             n_points_per_fm - number of points to sample, per feature-map.
         """
         def im2col(x, conv):
@@ -616,8 +616,8 @@ class FMReconstructionChannelPruner(_RankedStructureParameterPruner):
         Y = Y.transpose(2, 1)
         Y = Y.contiguous().view(-1, Y.size(2))
 
-        intermediate_fms['output_fms'][module.distiller_name].append(Y)
-        intermediate_fms['input_fms'][module.distiller_name].append(X)
+        intermediate_fms['output_fms'][module.cacp_name].append(Y)
+        intermediate_fms['input_fms'][module.cacp_name].append(X)
 
     def __init__(self, name, group_type, desired_sparsity, weights,
                  group_dependency=None, kwargs=None, magnitude_fn=utils.norms.l1_norm,

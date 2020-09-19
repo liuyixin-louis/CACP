@@ -33,13 +33,13 @@ from modules import EltwiseAdd
 __all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
            'resnet152', 'resnext50_32x4d', 'resnext101_32x8d',
            'wide_resnet50_2', 'wide_resnet101_2',
-           'DistillerBottleneck']
+           'Bottleneck']
 
 
-class DistillerBasicBlock(BasicBlock):
+class BasicBlock(BasicBlock):
     def __init__(self, *args, **kwargs):
         # Initialize torchvision version
-        super(DistillerBasicBlock, self).__init__(*args, **kwargs)
+        super(BasicBlock, self).__init__(*args, **kwargs)
 
         # Remove original relu in favor of numbered modules
         delattr(self, 'relu')
@@ -79,10 +79,10 @@ class DistillerBasicBlock(BasicBlock):
         return out
 
 
-class DistillerBottleneck(Bottleneck):
+class Bottleneck(Bottleneck):
     def __init__(self, *args, **kwargs):
         # Initialize torchvision version
-        super(DistillerBottleneck, self).__init__(*args, **kwargs)
+        super(Bottleneck, self).__init__(*args, **kwargs)
 
         # Remove original relu in favor of numbered modules
         delattr(self, 'relu')
@@ -137,7 +137,7 @@ def resnet18(pretrained=False, progress=True, **kwargs):
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _resnet('resnet18', DistillerBasicBlock, [2, 2, 2, 2], pretrained, progress,
+    return _resnet('resnet18', BasicBlock, [2, 2, 2, 2], pretrained, progress,
                    **kwargs)
 
 
@@ -148,7 +148,7 @@ def resnet34(pretrained=False, progress=True, **kwargs):
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _resnet('resnet34', DistillerBasicBlock, [3, 4, 6, 3], pretrained, progress,
+    return _resnet('resnet34', BasicBlock, [3, 4, 6, 3], pretrained, progress,
                    **kwargs)
 
 
@@ -159,7 +159,7 @@ def resnet50(pretrained=False, progress=True, **kwargs):
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _resnet('resnet50', DistillerBottleneck, [3, 4, 6, 3], pretrained, progress,
+    return _resnet('resnet50', Bottleneck, [3, 4, 6, 3], pretrained, progress,
                    **kwargs)
 
 
@@ -170,7 +170,7 @@ def resnet101(pretrained=False, progress=True, **kwargs):
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _resnet('resnet101', DistillerBottleneck, [3, 4, 23, 3], pretrained, progress,
+    return _resnet('resnet101', Bottleneck, [3, 4, 23, 3], pretrained, progress,
                    **kwargs)
 
 
@@ -181,7 +181,7 @@ def resnet152(pretrained=False, progress=True, **kwargs):
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _resnet('resnet152', DistillerBottleneck, [3, 8, 36, 3], pretrained, progress,
+    return _resnet('resnet152', Bottleneck, [3, 8, 36, 3], pretrained, progress,
                    **kwargs)
 
 
@@ -194,7 +194,7 @@ def resnext50_32x4d(pretrained=False, progress=True, **kwargs):
     """
     kwargs['groups'] = 32
     kwargs['width_per_group'] = 4
-    return _resnet('resnext50_32x4d', DistillerBottleneck, [3, 4, 6, 3],
+    return _resnet('resnext50_32x4d', Bottleneck, [3, 4, 6, 3],
                    pretrained, progress, **kwargs)
 
 
@@ -207,7 +207,7 @@ def resnext101_32x8d(pretrained=False, progress=True, **kwargs):
     """
     kwargs['groups'] = 32
     kwargs['width_per_group'] = 8
-    return _resnet('resnext101_32x8d', DistillerBottleneck, [3, 4, 23, 3],
+    return _resnet('resnext101_32x8d', Bottleneck, [3, 4, 23, 3],
                    pretrained, progress, **kwargs)
 
 def wide_resnet50_2(pretrained=False, progress=True, **kwargs):
@@ -218,7 +218,7 @@ def wide_resnet50_2(pretrained=False, progress=True, **kwargs):
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     kwargs['width_per_group'] = 64 * 2
-    return _resnet('wide_resnet50_2', DistillerBottleneck, [3, 4, 6, 3],
+    return _resnet('wide_resnet50_2', Bottleneck, [3, 4, 6, 3],
                    pretrained, progress, **kwargs)
 
 
@@ -230,5 +230,5 @@ def wide_resnet101_2(pretrained=False, progress=True, **kwargs):
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     kwargs['width_per_group'] = 64 * 2
-    return _resnet('wide_resnet101_2', DistillerBottleneck, [3, 4, 23, 3],
+    return _resnet('wide_resnet101_2', Bottleneck, [3, 4, 23, 3],
                    pretrained, progress, **kwargs)

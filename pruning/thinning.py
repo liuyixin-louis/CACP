@@ -241,7 +241,7 @@ def create_thinning_recipe_channels(sgraph, model, zeros_mask_dict):
                 param_name = predecessor+'.weight'
                 handle_layer(predecessor, param_name, nnz_channels)
             else:
-                raise ValueError("Distiller thinning code currently does not handle this conv.groups configuration")
+                raise ValueError("cacp thinning code currently does not handle this conv.groups configuration")
 
         # Now handle the BatchNormalization layer that follows the convolution
         bn_layers = sgraph.predecessors_f(layer_name, ['BatchNormalization'])
@@ -332,7 +332,7 @@ def create_thinning_recipe_filters(sgraph, model, zeros_mask_dict):
             param_name = successor+'.weight'
             handle_layer(successor, param_name, num_nnz_filters)
         else:
-            raise ValueError("Distiller thinning code currently does not handle this conv.groups configuration")
+            raise ValueError("cacp thinning code currently does not handle this conv.groups configuration")
 
     def handle_linear_successor(successor, indices):
         # If a Linear (Fully-Connected) layer follows, we need to update it's in_features member

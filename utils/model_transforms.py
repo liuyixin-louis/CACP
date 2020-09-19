@@ -122,7 +122,7 @@ def fold_batch_norms(model, dummy_input=None, adjacency_map=None, inference=True
         try:
             folded_module = SimulatedFoldedBatchNorm(param_module, bn_module)
         except ValueError:
-            msglogger.debug("Can't fold, {} does not track running stats".format(bn_module.distiller_name))
+            msglogger.debug("Can't fold, {} does not track running stats".format(bn_module.cacp_name))
             return None
         if inference:
             folded_module.freeze()
@@ -137,7 +137,7 @@ def fold_batch_norms(model, dummy_input=None, adjacency_map=None, inference=True
 
 
 def _fuse_sequence(sequence, named_modules, fuse_fn):
-    names = [m.distiller_name for m in sequence]
+    names = [m.cacp_name for m in sequence]
     msglogger.debug('Fusing sequence {}'.format(names))
 
     # Call fusing function

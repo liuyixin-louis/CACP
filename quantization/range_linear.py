@@ -386,7 +386,7 @@ class RangeLinearQuantWrapper(nn.Module):
         mode (ModuleQuantMode / LinearQuantMode): Quantization mode to use (symmetric / asymmetric-signed / unsigned)
         clip_acts (ClipMode): Activations clipping mode to use
         activation_stats (dict): Dict containing activation stats, used for static calculation of quantization
-            parameters. Dict should be in the format exported by distiller.data_loggers.QuantCalibrationStatsCollector.
+            parameters. Dict should be in the format exported by CACP.data_loggers.QuantCalibrationStatsCollector.
             If None then parameters are calculated dynamically.
         clip_n_stds (float): When clip_acts == ClipMode.N_STD, this is the number of standard deviations to use
         clip_half_range (bool): use half range clipping.
@@ -600,7 +600,7 @@ class RangeLinearQuantWrapper(nn.Module):
         if hasattr(input, 'quant_metadata'):
             if idx in self.inputs_quant_settings_overrides:
                 raise RuntimeError('<{}> Input {}: CONFLICT - Tensor has embedded quantization metadata AND user '
-                                   'defined input quantization settings'.format(self.distiller_name, idx))
+                                   'defined input quantization settings'.format(self.cacp_name, idx))
             qmd = input.quant_metadata
         else:
             # Input doesn't have embedded quantization data propagated from a previous layer
@@ -612,7 +612,7 @@ class RangeLinearQuantWrapper(nn.Module):
                 raise RuntimeError('<{}> Input {}: Expected tensor with embedded quantization metadata. Either:\n'
                                    '1. Make sure the previous operation is quantized\n'
                                    '2. Provide explicit input quantization settings\n'
-                                   '3. Set inputs_quant_auto_fallback'.format(self.distiller_name, idx))
+                                   '3. Set inputs_quant_auto_fallback'.format(self.cacp_name, idx))
             if self.preset_act_stats:
                 qmd = self.inputs_quant_metadata_fallback[idx]
             else:
@@ -999,14 +999,14 @@ class RangeLinearQuantParamLayerWrapper(RangeLinearQuantWrapper):
         assert self.wts_quant_settings.num_bits == 8, 'Conversion to PyTorch PTQ supported only for 8-bit quantization'
 
         # Convert weights - required by PyTorch to be signed 8-bit (torch.qint8)
-        q_weight = pytqc.distiller_quantized_tensor_to_pytorch(wrapped.weight.clone().detach(),
+        q_weight = pytqc.quantized_tensor_to_pytorch(wrapped.weight.clone().detach(),
                                                                self.w_scale, self.w_zero_point,
                                                                self.wts_quant_settings.num_bits,
                                                                self.wts_quant_settings.quant_mode, torch.qint8,
                                                                self.wts_quant_settings.per_channel, 0)
 
         # PyTorch PTQ modules expect the bias in FP32, we need to dequantize if necessary
-        # With Distiller PTQ the bias is only quantized on the first forward - we do a crude check if it has
+        # With CACP PTQ the bias is only quantized on the first forward - we do a crude check if it has
         # been quantized or not
         fp_bias = wrapped.bias.clone().detach()
         if self.has_bias:
@@ -1025,7 +1025,7 @@ class RangeLinearQuantParamLayerWrapper(RangeLinearQuantWrapper):
         pytorch_module.set_weight_bias(q_weight, fp_bias)
 
         # Convert activations qparams - required by PyTorch to be unsigned 8-bit (torch.quint8)
-        out_scale, out_zp = pytqc.distiller_qparams_to_pytorch(self.output_scale, self.output_zero_point,
+        out_scale, out_zp = pytqc.qparams_to_pytorch(self.output_scale, self.output_zero_point,
                                                                self.output_quant_settings.num_bits,
                                                                self.output_quant_settings.quant_mode, torch.quint8,
                                                                reduce_range)
@@ -1061,7 +1061,7 @@ class RangeLinearQuantMatmulWrapper(RangeLinearQuantWrapper):
         y_q = ------------------- * ((i1_q + zp_i1) * (i2_q + zp_i2) + zp_y
                scale_i1 * scale_i2
     Args:
-        wrapped_module (distiller.modules.Matmul or distiller.modules.BatchMatmul): Module to be wrapped
+        wrapped_module (CACP.modules.Matmul or CACP.modules.BatchMatmul): Module to be wrapped
         num_bits_acts (int): Number of bits used for inputs and output quantization
         num_bits_accum (int): Number of bits allocated for the accumulator of intermediate integer results
         mode (ModuleQuantMode / LinearQuantMode): Quantization mode to use (symmetric / asymmetric-signed/unsigned)
@@ -1110,13 +1110,13 @@ class RangeLinearQuantMatmulWrapper(RangeLinearQuantWrapper):
 
     def _convert_to_pytorch_quant(self, reduce_range):
         # Convert activations qparams - required by PyTorch to be unsigned 8-bit (torch.quint8)
-        scale, zp = pytqc.distiller_qparams_to_pytorch(self.output_scale, self.output_zero_point,
+        scale, zp = pytqc.qparams_to_pytorch(self.output_scale, self.output_zero_point,
                                                        self.output_quant_settings.num_bits,
                                                        self.output_quant_settings.quant_mode, torch.quint8,
                                                        reduce_range)
         modules = [self.wrapped_module, nnq.Quantize(float(scale), int(zp), torch.quint8)]
         if self.clip_half_range:
-            # The scale factor calculated in Distiller already considers the ReLU, so it's OK to apply the
+            # The scale factor calculated in CACP already considers the ReLU, so it's OK to apply the
             # ReLU after quantization
             modules.append(nnq.ReLU())
         return modules
@@ -1131,7 +1131,7 @@ class RangeLinearQuantConcatWrapper(RangeLinearQuantWrapper):
                  activation_stats=None, clip_n_stds=None, clip_half_range=False, scale_approx_mult_bits=None,
                  input_overrides=None, inputs_quant_auto_fallback=False):
         if not isinstance(wrapped_module, modules.Concat):
-            raise ValueError(self.__class__.__name__ + ' can only wrap distiller.modules.Concat modules')
+            raise ValueError(self.__class__.__name__ + ' can only wrap CACP.modules.Concat modules')
 
         if not activation_stats:
             raise NoStatsError(self.__class__.__name__ +
@@ -1162,7 +1162,7 @@ class RangeLinearQuantConcatWrapper(RangeLinearQuantWrapper):
 
     def _convert_to_pytorch_quant(self, reduce_range):
         # Convert activations qparams - required by PyTorch to be unsigned 8-bit (torch.quint8)
-        scale, zp = pytqc.distiller_qparams_to_pytorch(self.output_scale, self.output_zero_point,
+        scale, zp = pytqc.qparams_to_pytorch(self.output_scale, self.output_zero_point,
                                                        self.output_quant_settings.num_bits,
                                                        self.output_quant_settings.quant_mode, torch.quint8,
                                                        reduce_range)
@@ -1170,7 +1170,7 @@ class RangeLinearQuantConcatWrapper(RangeLinearQuantWrapper):
         m.qfunc.scale = float(scale)
         m.qfunc.zero_point = int(zp)
         if self.clip_half_range:
-            # The scale factor calculated in Distiller already considers the ReLU, so it's OK to apply the
+            # The scale factor calculated in CACP already considers the ReLU, so it's OK to apply the
             # ReLU after quantization
             m = nn.Sequential(m, nnq.ReLU())
         return m
@@ -1181,7 +1181,7 @@ class RangeLinearQuantEltwiseAddWrapper(RangeLinearQuantWrapper):
                  activation_stats=None, clip_n_stds=None, clip_half_range=False, scale_approx_mult_bits=None,
                  input_overrides=None, inputs_quant_auto_fallback=False):
         if not isinstance(wrapped_module, modules.EltwiseAdd):
-            raise ValueError(self.__class__.__name__ + ' can only wrap distiller.modules.EltwiseAdd modules')
+            raise ValueError(self.__class__.__name__ + ' can only wrap CACP.modules.EltwiseAdd modules')
 
         if not activation_stats:
             raise NoStatsError(self.__class__.__name__ +
@@ -1213,7 +1213,7 @@ class RangeLinearQuantEltwiseAddWrapper(RangeLinearQuantWrapper):
 
     def _convert_to_pytorch_quant(self, reduce_range):
         # Convert activations qparams - required by PyTorch to be unsigned 8-bit (torch.quint8)
-        scale, zp = pytqc.distiller_qparams_to_pytorch(self.output_scale, self.output_zero_point,
+        scale, zp = pytqc.qparams_to_pytorch(self.output_scale, self.output_zero_point,
                                                        self.output_quant_settings.num_bits,
                                                        self.output_quant_settings.quant_mode, torch.quint8,
                                                        reduce_range)
@@ -1228,7 +1228,7 @@ class RangeLinearQuantEltwiseMultWrapper(RangeLinearQuantWrapper):
                  activation_stats=None, clip_n_stds=None, clip_half_range=False, scale_approx_mult_bits=None,
                  input_overrides=None, inputs_quant_auto_fallback=False):
         if not isinstance(wrapped_module, modules.EltwiseMult):
-            raise ValueError(self.__class__.__name__ + ' can only wrap distiller.modules.EltwiseMult modules')
+            raise ValueError(self.__class__.__name__ + ' can only wrap CACP.modules.EltwiseMult modules')
 
         if not activation_stats:
             raise NoStatsError(self.__class__.__name__ +
@@ -1265,7 +1265,7 @@ class RangeLinearQuantEltwiseMultWrapper(RangeLinearQuantWrapper):
 
     def _convert_to_pytorch_quant(self, reduce_range):
         # Convert activations qparams - requirec by PyTorch to be unsigned 8-bit (torch.quint8)
-        scale, zp = pytqc.distiller_qparams_to_pytorch(self.output_scale, self.output_zero_point,
+        scale, zp = pytqc.qparams_to_pytorch(self.output_scale, self.output_zero_point,
                                                        self.output_quant_settings.num_bits,
                                                        self.output_quant_settings.quant_mode, torch.quint8,
                                                        reduce_range)
@@ -1273,7 +1273,7 @@ class RangeLinearQuantEltwiseMultWrapper(RangeLinearQuantWrapper):
         m.qfunc.scale = float(scale)
         m.qfunc.zero_point = int(zp)
         if self.clip_half_range:
-            # The scale factor calculated in Distiller already considers the ReLU, so it's OK to apply the
+            # The scale factor calculated in CACP already considers the ReLU, so it's OK to apply the
             # ReLU after quantization
             m = nn.Sequential(m, nnq.ReLU())
         return m
@@ -1442,7 +1442,7 @@ class RangeLinearEmbeddingWrapper(nn.Module):
                                     requires_grad=False)
         emb.weight = w_dq
 
-        scale, zp = pytqc.distiller_qparams_to_pytorch(self.w_scale, self.w_zero_point,
+        scale, zp = pytqc.qparams_to_pytorch(self.w_scale, self.w_zero_point,
                                                        self.wts_quant_settings.num_bits,
                                                        self.wts_quant_settings.quant_mode, torch.quint8,
                                                        reduce_range)
@@ -1517,7 +1517,7 @@ class RangeLinearFakeQuantWrapper(RangeLinearQuantWrapper):
         if q_module is None:
             # No PyTorch quantized module - so fake it
             # Convert activations qparams - required by PyTorch to be unsigned 8-bit (torch.quint8)
-            scale, zp = pytqc.distiller_qparams_to_pytorch(self.output_scale, self.output_zero_point,
+            scale, zp = pytqc.qparams_to_pytorch(self.output_scale, self.output_zero_point,
                                                            self.output_quant_settings.num_bits,
                                                            self.output_quant_settings.quant_mode, torch.quint8,
                                                            reduce_range)
@@ -1526,7 +1526,7 @@ class RangeLinearFakeQuantWrapper(RangeLinearQuantWrapper):
         else:
             modules = [self.wrapped_module]
         if self.clip_half_range:
-            # The scale factor calculated in Distiller already considers the ReLU, so it's OK to apply the
+            # The scale factor calculated in CACP already considers the ReLU, so it's OK to apply the
             # ReLU after quantization
             modules.append(nnq.ReLU())
 
@@ -1557,12 +1557,12 @@ class PostTrainLinearQuantizer(Quantizer):
       * torch.nn.Conv2d/Conv3d
       * torch.nn.Linear
       * torch.nn.Embedding
-      * distiller.modules.Concat
-      * distiller.modules.EltwiseAdd
-      * distiller.modules.EltwiseMult
-      * distiller.modules.Matmul
-      * distiller.modules.BatchMatmul
-    An existing module will likely need to be modified to use the 'distiller.modules.*' modules. This needs to
+      * CACP.modules.Concat
+      * CACP.modules.EltwiseAdd
+      * CACP.modules.EltwiseMult
+      * CACP.modules.Matmul
+      * CACP.modules.BatchMatmul
+    An existing module will likely need to be modified to use the 'CACP.modules.*' modules. This needs to
     be done BEFORE creating the quantizer. See the docs for more details:
     https://nervanasystems.github.io/distiller/prepare_model_quant.html
 
@@ -1582,7 +1582,7 @@ class PostTrainLinearQuantizer(Quantizer):
             output channel
         model_activation_stats (str / dict / OrderedDict): Either a path to activation stats YAML file, or a dictionary
             containing the stats. The stats are used for static calculation of quantization parameters.
-            The dict should be in the format exported by distiller.data_loggers.QuantCalibrationStatsCollector.
+            The dict should be in the format exported by CACP.data_loggers.QuantCalibrationStatsCollector.
             If None then parameters are calculated dynamically.
         fp16 (bool): Set to True to convert modules to half precision.
             WARNING - this argument is deprecated, use instead the argument `fpq_module`
@@ -1593,7 +1593,7 @@ class PostTrainLinearQuantizer(Quantizer):
             calculations.
             If None, scale factors will be kept in their original FP32 values.
         inputs_quant_auto_fallback (bool): Enabled by default.
-            See <distiller_root>/examples/post_train_quant/resnet18_imagenet_post_train_input_overrides.yaml
+            See <CACP_root>/examples/post_train_quant/resnet18_imagenet_post_train_input_overrides.yaml
             For details what this does and how to override it.
         fpq_module (Union[int, str]): use the modules in floating point mode and only quantize their outputs.
             takes the values (16, 32, 64) only, this will use RangeLinearFakeQuantWrapper.
@@ -1969,13 +1969,13 @@ class PostTrainLinearQuantizer(Quantizer):
                               "  * Optimizations for quantization of layers followed by Relu/Tanh/Sigmoid are only "
                               "supported when statistics are used.\nEND WARNING\n")
 
-        self.has_bidi_distiller_lstm = any(isinstance(m, modules.DistillerLSTM) and m.bidirectional for
+        self.has_bidi_lstm = any(isinstance(m, modules.LSTM) and m.bidirectional for
                                            _, m in self.model.named_modules())
-        if self.has_bidi_distiller_lstm:
-            warnings.warn('Model contains a bidirectional DistillerLSTM module. '
+        if self.has_bidi_lstm:
+            warnings.warn('Model contains a bidirectional LSTM module. '
                           'Automatic BN folding and statistics optimization based on tracing is not yet '
                           'supported for models containing such modules.\n'
-                          'Will perform specific optimization for the DistillerLSTM modules, but any other potential '
+                          'Will perform specific optimization for the LSTM modules, but any other potential '
                           'opportunities for optimization in the model will be ignored.', UserWarning)
             # Setting dummy_input to None to make sure SummaryGraph won't be called
             dummy_input = None
@@ -1988,12 +1988,12 @@ class PostTrainLinearQuantizer(Quantizer):
         self.save_per_layer_parameters(save_dir)
 
     def _pre_prepare_model(self, dummy_input):
-        if not self.has_bidi_distiller_lstm:
+        if not self.has_bidi_lstm:
             self._apply_bn_folding(dummy_input)
             self._apply_activation_stats_fusions()
             self._apply_fuse_relu()
         else:
-            self._apply_bidi_distiller_lstm_stats_fusion()
+            self._apply_bidi_lstm_stats_fusion()
 
         save_dir = msglogger.logdir if hasattr(msglogger, 'logdir') else '.'
         save_path = os.path.join(save_dir, 'quant_stats_after_prepare_model.yaml')
@@ -2036,7 +2036,7 @@ class PostTrainLinearQuantizer(Quantizer):
         named_modules = OrderedDict(self.model.named_modules())
         model_stats = self.model_activation_stats
         for n, m in named_modules.items():
-            # Look for the mark left by distiller.model_transforms.fold_batch_norms
+            # Look for the mark left by CACP.model_transforms.fold_batch_norms
             fused_modules = getattr(m, 'fused_modules', None)
             if fused_modules is None:
                 continue
@@ -2139,11 +2139,11 @@ class PostTrainLinearQuantizer(Quantizer):
                 m_override['make_identity'] = True
                 model_overrides[successor.name] = m_override
 
-    def _apply_bidi_distiller_lstm_stats_fusion(self):
-        distiller_lstm_cells = [n for n, m in self.model.named_modules() if
-                                isinstance(m, modules.DistillerLSTMCell)]
+    def _apply_bidi_lstm_stats_fusion(self):
+        lstm_cells = [n for n, m in self.model.named_modules() if
+                                isinstance(m, modules.LSTMCell)]
 
-        for name in distiller_lstm_cells:
+        for name in lstm_cells:
             name += '.eltwiseadd_gate'
             msglogger.debug('  Module {} followed by Sigmoid, updating stats'.format(name))
             sat_val = 6.
@@ -2160,16 +2160,16 @@ class PostTrainLinearQuantizer(Quantizer):
 
     def convert_to_pytorch(self, dummy_input, backend='fbgemm'):
         """
-        Convert a model quantized using distiller.quantization.PostTrainLinearQuantizer to model comprised solely of
+        Convert a model quantized using quantization.PostTrainLinearQuantizer to model comprised solely of
         native PyTorch static post-training quantization modules and operators.
 
-        This is a convenience wrapper around distiller.quantization.convert_distiller_ptq_model_to_pytorch
+        This is a convenience wrapper around quantization.ptq_model_to_pytorch
         See that function's documentation for more details.
         """
         if not self.prepared:
             raise RuntimeError("Must call prepare_model before attempting to convert to PyTorch")
 
-        return pytqc.convert_distiller_ptq_model_to_pytorch(self.model, dummy_input, backend=backend)
+        return pytqc.ptq_model_to_pytorch(self.model, dummy_input, backend=backend)
 
 
 ###############################################################################

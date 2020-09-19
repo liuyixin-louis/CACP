@@ -19,7 +19,7 @@ from .thinning import *
 #
 
 """
-:mod:`distiller.pruning` is a package implementing various pruning algorithms.
+:mod:`cacp.pruning` is a package implementing various pruning algorithms.
 """
 
 from .magnitude_pruner import MagnitudeParameterPruner
@@ -99,8 +99,8 @@ def create_mask_level_criterion(tensor, desired_sparsity):
     WARNING: due to the implementation details (speed over correctness), this will perform
     incorrectly if "too many" of the coefficients have the same value. E.g. this will fail:
         a = torch.ones(3, 64, 32, 32)
-        mask = distiller.create_mask_level_criterion(a, desired_sparsity=0.3)
-        assert math.isclose(distiller.sparsity(mask), 0.3)
+        mask = cacp.create_mask_level_criterion(a, desired_sparsity=0.3)
+        assert math.isclose(cacp.sparsity(mask), 0.3)
 
     Args:
         tensor - the tensor to mask.

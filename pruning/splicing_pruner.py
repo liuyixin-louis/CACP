@@ -86,7 +86,7 @@ class SplicingPruner(object):
             # a and b are the low and high thresholds, respectively.
             # We followed the example implementation from Yiwen Guo in Caffe, and used the
             # weight tensor's starting mean and std.
-            # This is very similar to the initialization performed by distiller.SensitivityPruner.
+            # This is very similar to the initialization performed by cacp.SensitivityPruner.
 
             zeros, ones = torch.zeros_like(current_mask), torch.ones_like(current_mask)
             weights_abs = param.abs()

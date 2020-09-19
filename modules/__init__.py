@@ -23,7 +23,7 @@ from .topology import *
 
 __all__ = ['EltwiseAdd', 'EltwiseSub', 'EltwiseMult', 'EltwiseDiv', 'Matmul', 'BatchMatmul',
            'Concat', 'Chunk', 'Split', 'Stack',
-           'DistillerLSTMCell', 'DistillerLSTM', 'convert_model_to_distiller_lstm',
+           'LSTMCell', 'LSTM', 'convert_model_to_lstm',
            'Norm', 'Mean', 'BranchPoint', 'Print']
 
 

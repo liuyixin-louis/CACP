@@ -267,7 +267,7 @@ def _set_model_input_shape_attr(model, arch, dataset, pretrained, cadene):
 
 
 def register_user_model(arch, dataset, model):
-    """A simple mechanism to support models that are not part of distiller.models"""
+    """A simple mechanism to support models that are not part of models"""
     _model_extensions[(arch, dataset)] = model
 
 

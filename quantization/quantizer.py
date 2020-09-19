@@ -49,7 +49,7 @@ def hack_float_backup_parameter(module, name, num_bits):
 
     first = False
     if not hasattr(module, 'repr_mod'):
-        setattr(module, 'repr_mod', ', \nDistiller_QuantAwareTrain: ')
+        setattr(module, 'repr_mod', ', \nCACP_QuantAwareTrain: ')
         first = True
         module.original_extra_repr = module.extra_repr
         module.extra_repr = lambda: module.original_extra_repr() + module.repr_mod

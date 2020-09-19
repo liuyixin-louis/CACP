@@ -1,6 +1,6 @@
 import torch.nn as nn
 import torchvision.models as models
-from .resnet import DistillerBottleneck
+from .resnet import Bottleneck
 from utils.early_exit import EarlyExitMgr
 
 
@@ -19,7 +19,7 @@ def get_exits_def(num_classes):
                                                   nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
                                                   nn.Flatten(),
                                                   nn.Linear(1960, num_classes))),
-                                                  #distiller.modules.Print())),
+                                                  #modules.Print())),
                  ('layer2.3.relu3', nn.Sequential(nn.Conv2d(512, 12, kernel_size=7, stride=2, padding=3, bias=True),
                                                   nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
                                                   nn.Flatten(),
@@ -54,5 +54,5 @@ def resnet50_earlyexit(pretrained=False, progress=True, **kwargs):
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _resnet('resnet50', DistillerBottleneck, [3, 4, 6, 3], pretrained, progress,
+    return _resnet('resnet50', Bottleneck, [3, 4, 6, 3], pretrained, progress,
                    **kwargs)
