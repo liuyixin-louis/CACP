@@ -4,3 +4,5 @@ backup/
 .vscode/
 __pycache__/
 .ipynb_checkpoints/
+latest_log_dir/
+latest_log_file

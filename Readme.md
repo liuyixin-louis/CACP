@@ -48,24 +48,7 @@ bash ./script/finetune.sh
 
 The following table is the result we get (results might vary a little from the paper due to different random seed):
 
-![image-20200919032710550](https://i.loli.net/2020/09/19/vYjW3gN9KduLBIH.png)
+![Table](https://i.loli.net/2020/09/19/HnFXVwmSoDdUAWj.png)
 
 
 
-
-
-
-
-## Reference
-
-If you find the repo useful, please kindly cite our paper:
-
-```tex
-@inproceedings{CACP_AAAI-21,
-  title={CACP: Conditional Channel Pruning for Automated Model Compression},
-  author={Yixin Liu, Yong Guo, Zichang Liu, Haohua Liu, Jingjie Zhang,Zejun Chen, Jing Liu, Jian Chen},
-  booktitle={AAAI-21 Student Abstract and Poster Program Thirty-Fifth Conference on Artificial Intelligence},
-  year={2020},
-  url = {}
-}
-```
