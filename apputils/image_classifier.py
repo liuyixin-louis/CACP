@@ -385,7 +385,6 @@ def _config_compute_device(args):
             # Set default device in case the first one on the list != 0
             torch.cuda.set_device(args.gpus[0])
 
-
 def _init_learner(args):
     # Create the model
     model = create_model(args.pretrained, args.dataset, args.arch,

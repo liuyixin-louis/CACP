@@ -1,6 +1,6 @@
-# Code for "AMC: AutoML for Model Compression and Acceleration on Mobile Devices"
-# Yihui He*, Ji Lin*, Zhijian Liu, Hanrui Wang, Li-Jia Li, Song Han
-# {jilin, songhan}@mit.edu
+# Code for "CACP: Conditional Automated Channel Pruning for Deep Neural Networks"
+# Yixin Liu†, Yong Guo†, Zichang Liu†, Haohua Liu†, Jingjie Zhang†,Zejun Chen†, Jing Liu‡, Jian Chen†
+# {seyixinliu, guo.yong, seliuzc, seforlawamail, sezjj, seczj722}@mail.scut.edu.cn,liujing95@outlook.com, ellachen@scut.edu.cn
 
 import numpy as np
 import torch
@@ -266,11 +266,11 @@ def train(num_episode, agent, env, output, warmup):
         observation = deepcopy(observation2)
 
         if done:  # end of episode
-            print('#{}: target_ratio:{} episode_reward:{:.4f} acc: {:.4f}, ratio: {:.4f}'.format(episode,env.amc_cfg.target_density, episode_reward,
+            print('#{}: target_ratio:{} episode_reward:{:.4f} acc: {:.4f}, ratio: {:.4f}'.format(episode,env.cacp_cfg.target_density, episode_reward,
                                                                                  info['accuracy'],
                                                                                  info['compress_ratio']))
             text_writer.write(
-                '#{}: target_ratio:{} episode_reward:{:.4f} acc: {:.4f}, ratio: {:.4f}'.format(episode,env.amc_cfg.target_density, episode_reward,
+                '#{}: target_ratio:{} episode_reward:{:.4f} acc: {:.4f}, ratio: {:.4f}'.format(episode,env.cacp_cfg.target_density, episode_reward,
                                                                                  info['accuracy'],
                                                                                  info['compress_ratio']))
             final_reward = T[-1][0]
@@ -300,7 +300,7 @@ def train(num_episode, agent, env, output, warmup):
             # for i, preserve_rate in enumerate(env.strategy):
             #     tfwriter.add_scalar('preserve_rate/{}'.format(i), preserve_rate, episode)
 
-            text_writer.write('best reward for target ratio {}: {}\n'.format(env.amc_cfg.target_density,env.best_reward[env.amc_cfg.target_density]))
+            text_writer.write('best reward for target ratio {}: {}\n'.format(env.cacp_cfg.target_density,env.best_reward[env.cacp_cfg.target_density]))
             #text_writer.write('best policy: {}\n'.format(env.best_strategy))
     text_writer.close()
  

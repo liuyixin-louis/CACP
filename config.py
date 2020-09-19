@@ -40,7 +40,7 @@ from torch.optim.lr_scheduler import *
 from pruning.thinning import *
 from pruning import *
 from regularization import *
-from learning_rate import *
+from utils.learning_rate import *
 from quantization import *
 from utils import filter_kwargs
 from pruning.scheduler import CompressionScheduler

@@ -13,8 +13,8 @@ This repo contains the PyTorch implementation for paper [**Conditional Channel P
 If you find the repo useful, please kindly cite our paper:
 
 ```
-@inproceedings{ ,
-  title={CAMC: Conditional Channel Pruning for Automated Model Compression},
+@inproceedings{CACP,
+  title={CACP: Conditional Channel Pruning for Automated Model Compression},
   author={},
   booktitle={AAAI},
   year={2020}
@@ -26,7 +26,7 @@ If you find the repo useful, please kindly cite our paper:
 
 
 
-## Training CAMC
+## Training CACP
 
 
 

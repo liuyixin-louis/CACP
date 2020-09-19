@@ -17,7 +17,7 @@
 import csv
 
 
-__all__ = ["AMCStatsLogger", "FineTuneStatsLogger"]
+__all__ = ["CACPStatsLogger", "FineTuneStatsLogger"]
 
 
 class _CSVLogger(object):
@@ -35,7 +35,7 @@ class _CSVLogger(object):
             writer.writerow(fields)
 
 
-class AMCStatsLogger(_CSVLogger):
+class CACPStatsLogger(_CSVLogger):
     def __init__(self, fname):
         headers = ['episode', 'top1', 'reward', 'total_macs', 'normalized_macs', 'normalized_nnz',
                    'ckpt_name', 'action_history', 'agent_action_history', 'performance',"pruning_ratio"]

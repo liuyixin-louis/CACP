@@ -1,28 +1,7 @@
-#
-# Copyright (c) 2018 Intel Corporation
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-
 """
-We thank Prof. Song Han and his team for their help with certain critical parts 
-of this implementation.
-
-AMC: AutoML for Model Compression and Acceleration on Mobile Devices.
-     Yihui He, Ji Lin, Zhijian Liu, Hanrui Wang, Li-Jia Li, Song Han
-     arXiv:1802.03494
+CACP: Conditional Automated Channel Pruning for Deep Neural Networks
+     Yixin Liu†, Yong Guo†, Zichang Liu†, Haohua Liu†, Jingjie Zhang†,Zejun Chen†, Jing Liu‡, Jian Chen†
 """
-
 import math
 import os
 import copy
@@ -32,12 +11,12 @@ import torch
 import gym
 from collections import OrderedDict, namedtuple
 from utils.features_collector import collect_intermediate_featuremap_samples
-from utils.ac_loggers import AMCStatsLogger, FineTuneStatsLogger
+from utils.ac_loggers import CACPStatsLogger, FineTuneStatsLogger
 import utils
 import data_loggers
 
 
-msglogger = logging.getLogger("examples.auto_compression.amc")
+msglogger = logging.getLogger("CACP")
 Observation = namedtuple('Observation', ["prun_ratio",'t', 'type', 'n', 'c',  'h', 'w', 'stride', 'k', 'MACs',
                                          'Weights', 'reduced', 'rest', 'prev_a'])
 ObservationLen = len(Observation._fields)
@@ -47,10 +26,10 @@ def is_using_continuous_action_space(agent):
     return agent in ("DDPG", "ClippedPPO-continuous", "Random-policy", "TD3")
 
 
-def log_amc_config(amc_cfg):
+def log_cacp_config(cacp_cfg):
     try:
-        msglogger.info('AMC configuration:')
-        for k, v in amc_cfg.items():
+        msglogger.info('cacp configuration:')
+        for k, v in cacp_cfg.items():
             msglogger.info("\t{} : {}".format(k, v))
     except TypeError as e:
         pass
@@ -79,28 +58,28 @@ from utils.net_wrapper import NetworkWrapper
 
 
 class DistillerWrapperEnvironment(gym.Env):
-    def __init__(self, model, app_args, amc_cfg, services):
+    def __init__(self, model, app_args, cacp_cfg, services):
         self.pylogger = data_loggers.PythonLogger(
-            logging.getLogger("examples.auto_compression.amc.summaries"))
+            logging.getLogger("examples.auto_compression.cacp.summaries"))
         logdir = logging.getLogger().logdir
         self.tflogger = data_loggers.TensorBoardLogger(logdir)
         self._render = False
         self.orig_model = copy.deepcopy(model)
         self.app_args = app_args
-        self.amc_cfg = amc_cfg
+        self.cacp_cfg = cacp_cfg
         self.services = services
 
         try:
-            modules_list = amc_cfg.modules_dict[app_args.arch]
+            modules_list = cacp_cfg.modules_dict[app_args.arch]
         except KeyError:
             raise ValueError("The config file does not specify the modules to compress for %s" % app_args.arch)
-        self.net_wrapper = NetworkWrapper(model, app_args, services, modules_list, amc_cfg.pruning_pattern)
+        self.net_wrapper = NetworkWrapper(model, app_args, services, modules_list, cacp_cfg.pruning_pattern)
         self.original_model_macs, self.original_model_size = self.net_wrapper.get_resources_requirements()
 
         # our works
-        self.support_targets = amc_cfg.support_raito
+        self.support_targets = cacp_cfg.support_raito
         self.curr_target_index = 0
-        self.amc_cfg.target_density = self.support_targets[0]
+        self.cacp_cfg.target_density = self.support_targets[0]
         self.best_reward = dict(zip(self.support_targets,[float("-inf")]*len(self.support_targets)))
 
 
@@ -111,16 +90,16 @@ class DistillerWrapperEnvironment(gym.Env):
 
 
 
-        self.action_low, self.action_high = amc_cfg.action_range
-        #self.action_high = amc_cfg.action_range[1]
+        self.action_low, self.action_high = cacp_cfg.action_range
+        #self.action_high = cacp_cfg.action_range[1]
         self._log_model_info()
-        log_amc_config(amc_cfg)
+        log_cacp_config(cacp_cfg)
         self._configure_action_space()
         self.observation_space = gym.spaces.Box(0, float("inf"), shape=(len(Observation._fields),))
-        self.stats_logger = AMCStatsLogger(os.path.join(logdir, 'amc.csv'))
+        self.stats_logger = CACPStatsLogger(os.path.join(logdir, 'cacp.csv'))
         self.ft_stats_logger = FineTuneStatsLogger(os.path.join(logdir, 'ft_top1.csv'))
 
-        if self.amc_cfg.pruning_method == "fm-reconstruction":
+        if self.cacp_cfg.pruning_method == "fm-reconstruction":
             self._collect_fm_reconstruction_samples(modules_list)
         
         
@@ -133,7 +112,7 @@ class DistillerWrapperEnvironment(gym.Env):
         to reconstruct these samples.
         """
         from functools import partial
-        if self.amc_cfg.pruning_pattern != "channels":
+        if self.cacp_cfg.pruning_pattern != "channels":
             raise ValueError("Feature-map reconstruction is only supported when pruning weights channels")
 
         def acceptance_criterion(m, mod_names):
@@ -148,7 +127,7 @@ class DistillerWrapperEnvironment(gym.Env):
             self.net_wrapper.validate,
             partial(acceptance_criterion, mod_names=modules_list),
             partial(FMReconstructionChannelPruner.cache_featuremaps_fwd_hook,
-                    n_points_per_fm=self.amc_cfg.n_points_per_fm))
+                    n_points_per_fm=self.cacp_cfg.n_points_per_fm))
 
     def _log_model_info(self):
         msglogger.debug("Model %s has %d modules (%d pruned)", self.app_args.arch,
@@ -158,8 +137,8 @@ class DistillerWrapperEnvironment(gym.Env):
         msglogger.debug("\tTotal weights: %s" % utils.pretty_int(self.original_model_size))
 
     def _configure_action_space(self):
-        if is_using_continuous_action_space(self.amc_cfg.agent_algo):
-            if self.amc_cfg.agent_algo == "ClippedPPO-continuous":
+        if is_using_continuous_action_space(self.cacp_cfg.agent_algo):
+            if self.cacp_cfg.agent_algo == "ClippedPPO-continuous":
                 self.action_space = gym.spaces.Box(PPO_MIN, PPO_MAX, shape=(1,))
             else:
                 self.action_space = gym.spaces.Box(self.action_low, self.action_high, shape=(1,))
@@ -217,7 +196,7 @@ class DistillerWrapperEnvironment(gym.Env):
 
     def change(self):
         self.curr_target_index = (self.curr_target_index+1) % len(self.support_targets)
-        self.amc_cfg.target_density = self.support_targets[self.curr_target_index]
+        self.cacp_cfg.target_density = self.support_targets[self.curr_target_index]
 
 
 
@@ -237,8 +216,8 @@ class DistillerWrapperEnvironment(gym.Env):
                         (self.current_state_id, self.current_layer().name, self.episode, pruning_action))
         self.agent_action_history.append(pruning_action)
 
-        if is_using_continuous_action_space(self.amc_cfg.agent_algo):
-            if self.amc_cfg.agent_algo == "ClippedPPO-continuous":
+        if is_using_continuous_action_space(self.cacp_cfg.agent_algo):
+            if self.cacp_cfg.agent_algo == "ClippedPPO-continuous":
                 # We need to map PPO's infinite action-space (actions sampled from a Gaussian) to our action-space.
                 pruning_action = adjust_ppo_output(pruning_action, self.action_high, self.action_low)
             else:
@@ -248,8 +227,8 @@ class DistillerWrapperEnvironment(gym.Env):
             pruning_action = pruning_action / 10
         msglogger.debug("\tAgent clipped pruning_action={}".format(pruning_action))
 
-        if self.amc_cfg.action_constrain_fn is not None:
-            pruning_action = self.amc_cfg.action_constrain_fn(self, pruning_action=pruning_action)
+        if self.cacp_cfg.action_constrain_fn is not None:
+            pruning_action = self.cacp_cfg.action_constrain_fn(self, pruning_action=pruning_action)
             msglogger.debug("Constrained pruning_action={}".format(pruning_action))
 
         # Calculate the final compression rate
@@ -263,11 +242,11 @@ class DistillerWrapperEnvironment(gym.Env):
         if pruning_action > 0:
             pruning_action = self.net_wrapper.remove_structures(self.current_layer_id,
                                                                 fraction_to_prune=pruning_action,
-                                                                prune_what=self.amc_cfg.pruning_pattern,
-                                                                prune_how=self.amc_cfg.pruning_method,
-                                                                group_size=self.amc_cfg.group_size,
+                                                                prune_what=self.cacp_cfg.pruning_pattern,
+                                                                prune_how=self.cacp_cfg.pruning_method,
+                                                                group_size=self.cacp_cfg.group_size,
                                                                 apply_thinning=self.episode_is_done(),
-                                                                ranking_noise=self.amc_cfg.ranking_noise)
+                                                                ranking_noise=self.cacp_cfg.ranking_noise)
                                                                 #random_state=self.random_state)
         else:
             pruning_action = 0
@@ -286,7 +265,7 @@ class DistillerWrapperEnvironment(gym.Env):
         msglogger.debug("\tself._removed_macs={}".format(self.removed_macs))
         assert math.isclose(layer_macs_after_action / layer_macs, 1 - pruning_action)
 
-        stats = ('Performance/Validation/{}/'.format(self.amc_cfg.target_density),
+        stats = ('Performance/Validation/{}/'.format(self.cacp_cfg.target_density),
                  OrderedDict([('requested_action', pruning_action)]))
 
         utils.log_training_progress(stats, None,
@@ -303,10 +282,10 @@ class DistillerWrapperEnvironment(gym.Env):
         else:
             self.current_layer_id = self.net_wrapper.model_metadata.pruned_idxs[self.current_state_id]
 
-            if self.amc_cfg.ft_frequency is not None and self.current_state_id % self.amc_cfg.ft_frequency == 0:
+            if self.cacp_cfg.ft_frequency is not None and self.current_state_id % self.cacp_cfg.ft_frequency == 0:
                 self.net_wrapper.train(1, self.episode)
             observation = self.get_obs()
-            if self.amc_cfg.reward_frequency is not None and self.current_state_id % self.amc_cfg.reward_frequency == 0:
+            if self.cacp_cfg.reward_frequency is not None and self.current_state_id % self.cacp_cfg.reward_frequency == 0:
                 reward, top1, top5, vloss = self.compute_reward(total_macs_after_act, total_nnz_after_act)
             else:
                 reward = 0
@@ -314,9 +293,9 @@ class DistillerWrapperEnvironment(gym.Env):
         if self.episode_is_done():
             normalized_macs = total_macs_after_act / self.original_model_macs * 100
             info = {"accuracy": top1, "compress_ratio": normalized_macs}
-            if self.amc_cfg.protocol == "mac-constrained":
+            if self.cacp_cfg.protocol == "mac-constrained":
                 # Sanity check (special case only for "mac-constrained")
-                #assert self.removed_macs_pct >= 1 - self.amc_cfg.target_density - 0.002 # 0.01
+                #assert self.removed_macs_pct >= 1 - self.cacp_cfg.target_density - 0.002 # 0.01
                 pass
         else:
             info = {}
@@ -359,7 +338,7 @@ class DistillerWrapperEnvironment(gym.Env):
             layer_macs = self.net_wrapper.layer_macs(layer)
             mod = utils.model_find_module(self.model, layer.name)
             if isinstance(mod, torch.nn.Conv2d):
-                obs = [self.amc_cfg.target_density,state_id,
+                obs = [self.cacp_cfg.target_density,state_id,
                        0,
                        mod.out_channels,
                        mod.in_channels,
@@ -371,7 +350,7 @@ class DistillerWrapperEnvironment(gym.Env):
                        layer_macs,
                        0, 0, 0]
             elif isinstance(mod, torch.nn.Linear):
-                obs = [self.amc_cfg.target_density,state_id,
+                obs = [self.cacp_cfg.target_density,state_id,
                        1,
                        mod.out_features,
                        mod.in_features,
@@ -427,7 +406,7 @@ class DistillerWrapperEnvironment(gym.Env):
 
     def is_macs_constraint_achieved(self, compressed_model_total_macs):
         current_density = compressed_model_total_macs / self.original_model_macs
-        return self.amc_cfg.target_density >= current_density
+        return self.cacp_cfg.target_density >= current_density
 
     def compute_reward(self, total_macs, total_nnz):
         """Compute the reward.
@@ -436,12 +415,12 @@ class DistillerWrapperEnvironment(gym.Env):
         configured when the data-loader is instantiated)"""
         num_elements = utils.model_params_size(self.model, param_dims=[2, 4], param_types=['weight'])
 
-        # Fine-tune (this is a nop if self.amc_cfg.num_ft_epochs==0)
-        accuracies = self.net_wrapper.train(self.amc_cfg.num_ft_epochs, self.episode)
+        # Fine-tune (this is a nop if self.cacp_cfg.num_ft_epochs==0)
+        accuracies = self.net_wrapper.train(self.cacp_cfg.num_ft_epochs, self.episode)
         self.ft_stats_logger.add_record([self.episode, accuracies])
 
         top1, top5, vloss = self.net_wrapper.validate()
-        reward = self.amc_cfg.reward_fn(self, top1, top5, vloss, total_macs)
+        reward = self.cacp_cfg.reward_fn(self, top1, top5, vloss, total_macs)
         return reward, top1, top5, vloss
 
     def finalize_episode(self, reward, val_results, total_macs, total_nnz,
@@ -451,8 +430,8 @@ class DistillerWrapperEnvironment(gym.Env):
         normalized_macs = total_macs / self.original_model_macs * 100
         normalized_nnz = total_nnz / self.original_model_size * 100
 
-        if reward > self.best_reward[self.amc_cfg.target_density]:
-            self.best_reward[self.amc_cfg.target_density] = reward
+        if reward > self.best_reward[self.cacp_cfg.target_density]:
+            self.best_reward[self.cacp_cfg.target_density] = reward
             ckpt_name = self.save_checkpoint(is_best=True)
             msglogger.info("Best reward={}  episode={}  top1={}".format(reward, self.episode, top1))
         else:
@@ -465,11 +444,11 @@ class DistillerWrapperEnvironment(gym.Env):
                   json.dumps(performance)]
         self.stats_logger.add_record(fields)
         msglogger.info("====Target Now :%.2f====",
-                       self.amc_cfg.target_density)
+                       self.cacp_cfg.target_density)
         msglogger.info("Top1: %.2f - compute: %.2f%% - params:%.2f%% - actions: %s",
                        top1, normalized_macs, normalized_nnz, self.action_history)
         if log_stats:
-            stats = ('Performance/EpisodeEnd/TargetRatio{}/'.format(self.amc_cfg.target_density),
+            stats = ('Performance/EpisodeEnd/TargetRatio{}/'.format(self.cacp_cfg.target_density),
                      OrderedDict([
                                     ('Loss', vloss),
                                   ('Top1', top1),
@@ -486,11 +465,11 @@ class DistillerWrapperEnvironment(gym.Env):
         """Save the learned-model checkpoint"""
         episode = str(self.episode).zfill(3)
         if is_best:
-            fname = "BEST_adc_episode_{}_{}".format(episode,self.amc_cfg.target_density)
+            fname = "BEST_adc_episode_{}_{}".format(episode,self.cacp_cfg.target_density)
         else:
-            fname = "adc_episode_{}_{}".format(episode,self.amc_cfg.target_density )
-        if is_best or self.amc_cfg.save_chkpts:
-            # Always save the best episodes, and depending on amc_cfg.save_chkpts save all other episodes
+            fname = "adc_episode_{}_{}".format(episode,self.cacp_cfg.target_density )
+        if is_best or self.cacp_cfg.save_chkpts:
+            # Always save the best episodes, and depending on cacp_cfg.save_chkpts save all other episodes
             scheduler = self.net_wrapper.create_scheduler()
             extras = {"creation_masks": self.net_wrapper.sparsification_masks}
             self.services.save_checkpoint_fn(epoch=0, model=self.model,

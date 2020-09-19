@@ -1,6 +1,7 @@
-# Code for "AMC: AutoML for Model Compression and Acceleration on Mobile Devices"
-# Yihui He*, Ji Lin*, Zhijian Liu, Hanrui Wang, Li-Jia Li, Song Han
-# {jilin, songhan}@mit.edu
+# Code for "CACP: Conditional Automated Channel Pruning for Deep Neural Networks"
+# Yixin Liu†, Yong Guo†, Zichang Liu†, Haohua Liu†, Jingjie Zhang†,Zejun Chen†, Jing Liu‡, Jian Chen†
+# {seyixinliu, guo.yong, seliuzc, seforlawamail, sezjj, seczj722}@mail.scut.edu.cn,liujing95@outlook.com, ellachen@scut.edu.cn
+
 
 from __future__ import absolute_import
 from collections import deque, namedtuple
