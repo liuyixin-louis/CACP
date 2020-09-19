@@ -8,5 +8,4 @@ python cacp.py\
  --cacp-heatup-episodes 100 --cacp-training-episodes 800 \
  --out-dir logs \
  --name resnet56-cifar10-CACP-100-800-mac-constrained-conditional-reward \
- --deterministic --conditional --pretrained\
- --state_dict checkpoints/pytorch_resnet_cifar10/cifar10-resnet56-f5939a66.pth
+ --deterministic --conditional --pretrained
